@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import logging
 import sys
+from pathlib import Path
 
 from dotenv import load_dotenv
 
@@ -15,12 +16,9 @@ def _setup_logging(verbose: bool) -> None:
     )
 
 
-async def run(topic: str, stream_writer: bool = True) -> dict:
+async def run_full(topic: str) -> dict:
+    """Full pipeline: searcher → analyst → writer → photo_generator."""
     graph = build_graph()
-
-    if not stream_writer:
-        final = await graph.ainvoke({"topic": topic})
-        return final
 
     # Stream messages from the writer node only so the user sees the report live.
     final_state: dict = {}
@@ -46,17 +44,57 @@ async def run(topic: str, stream_writer: bool = True) -> dict:
     return final_state
 
 
+async def run_carousel_only(topic: str, report: str) -> dict:
+    """Skip research — run only the photo_generator node against a given report."""
+    # Import lazily so this path doesn't pull in the searcher/crawl4ai deps at parse time.
+    from nodes import photo_generator_node
+
+    state = {"topic": topic, "report": report}
+    produced = await photo_generator_node(state)
+    return {**state, **produced}
+
+
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Deep research + Instagram carousel pipeline.")
-    parser.add_argument("topic", nargs="+", help="Research topic")
-    parser.add_argument("-q", "--quiet", action="store_true", help="Suppress node logs")
+    parser = argparse.ArgumentParser(
+        description="Deep research + Instagram carousel pipeline.",
+    )
+    parser.add_argument("topic", nargs="+", help="Research topic (or caption seed when using --report-file).")
+    parser.add_argument("-q", "--quiet", action="store_true", help="Suppress node logs.")
+    src = parser.add_mutually_exclusive_group()
+    src.add_argument(
+        "--report-file",
+        type=Path,
+        metavar="PATH",
+        help=(
+            "Skip research; read the report from this file and run only the "
+            "photo_generator node. Useful for iterating on slide design."
+        ),
+    )
+    src.add_argument(
+        "--report",
+        type=str,
+        metavar="TEXT",
+        help="Skip research; use this inline string as the report (for short snippets).",
+    )
     args = parser.parse_args()
 
     load_dotenv()
     _setup_logging(verbose=not args.quiet)
 
     topic = " ".join(args.topic)
-    final = asyncio.run(run(topic))
+
+    if args.report_file or args.report:
+        if args.report_file:
+            if not args.report_file.exists():
+                print(f"error: report file not found: {args.report_file}", file=sys.stderr)
+                return 2
+            report = args.report_file.read_text(encoding="utf-8")
+        else:
+            report = args.report
+        print(f"[carousel-only mode] using report of {len(report)} chars; topic={topic!r}")
+        final = asyncio.run(run_carousel_only(topic, report))
+    else:
+        final = asyncio.run(run_full(topic))
 
     zip_path = final.get("carousel_zip_path")
     caption = final.get("caption")

@@ -12,6 +12,8 @@ from carousel import (
     SlideSVG,
     build_zip,
     fallback_svg,
+    pick_accents,
+    svg_to_png,
     validate_svg,
 )
 from prompts import (
@@ -22,6 +24,8 @@ from prompts import (
     SVG_DESIGNER_SYSTEM,
     WRITER_SYSTEM,
 )
+
+SLIDE_DESIGN_ATTEMPTS = 3
 from state import ResearchState
 from tools import RESEARCH_TOOLS
 
@@ -100,21 +104,41 @@ async def writer_node(state: ResearchState) -> dict:
 
 
 async def _design_slide(
-    slide: Slide, index: int, total: int, topic: str
-) -> str:
-    """Ask the designer LLM for one slide's SVG. Return a validated SVG string,
-    falling back to a minimal safe SVG if the output can't be parsed."""
-    designer = _llm(max_tokens=3000, temperature=0.8).with_structured_output(SlideSVG)
-    user_brief = (
+    slide: Slide,
+    index: int,
+    total: int,
+    topic: str,
+    accent: str,
+) -> bytes:
+    """Ask the designer LLM for one slide's SVG, validate it, and rasterize to
+    PNG. If anything fails — invalid XML, unresolved refs, a cairosvg crash —
+    regenerate the slide. After all attempts fail, return a rendered fallback."""
+    designer = _llm(max_tokens=8192, temperature=0.8).with_structured_output(SlideSVG)
+    user_brief_base = (
+        f"ACCENT FOR THIS SLIDE: {accent}\n"
+        "(Use this exact hex for the badge, headline highlight words, the "
+        "3px accent separator, the glow-gradient stops, the dot indicator "
+        "for the current slide, the bottom-bar logo mark, and any card "
+        "borders or icon-square tints. Every other element of the brand "
+        "theme stays fixed as defined in your system prompt.)\n\n"
+        "=== THIS SLIDE ===\n"
         f"Carousel topic: {topic}\n"
         f"Slide position: {index} of {total}\n"
         f"Slide role: {slide.role}\n"
         f"Headline: {slide.headline}\n"
         f"Body: {slide.body or '(none — headline-only slide)'}\n\n"
-        "Design this single slide as a 1080×1080 SVG, following the design brief."
+        "Design this single slide as a 1080×1080 SVG. Execute the brand "
+        "theme precisely; vary only composition."
+    )
+    repair_hint = (
+        "\n\nIMPORTANT: a previous attempt produced an SVG that could not be rendered. "
+        "Avoid marker references (marker-start, marker-end, marker-mid), avoid filter/"
+        "clipPath refs unless you also define them, avoid url(#...) references to IDs "
+        "that don't exist in this same document, and keep the structure simple."
     )
 
-    for attempt in (1, 2):
+    for attempt in range(1, SLIDE_DESIGN_ATTEMPTS + 1):
+        user_brief = user_brief_base + (repair_hint if attempt > 1 else "")
         try:
             result: SlideSVG = await designer.ainvoke(
                 [
@@ -127,12 +151,25 @@ async def _design_slide(
             continue
 
         cleaned = validate_svg(result.svg)
-        if cleaned:
-            return cleaned
-        log.warning("slide %d SVG failed validation (attempt %d)", index, attempt)
+        if not cleaned:
+            log.warning("slide %d SVG failed XML validation (attempt %d)", index, attempt)
+            continue
 
-    log.warning("slide %d: using fallback SVG after design failures", index)
-    return fallback_svg(slide.headline, index, total)
+        png = svg_to_png(cleaned)
+        if png is not None:
+            return png
+        log.warning(
+            "slide %d SVG parsed but failed to render (attempt %d) — regenerating",
+            index,
+            attempt,
+        )
+
+    log.warning("slide %d: using fallback SVG after %d failed attempts", index, SLIDE_DESIGN_ATTEMPTS)
+    fallback_png = svg_to_png(fallback_svg(slide.headline, index, total))
+    if fallback_png is None:
+        # Fallback SVG is hand-authored and known-safe; this branch should be unreachable.
+        raise RuntimeError(f"Failed to render fallback for slide {index}")
+    return fallback_png
 
 
 async def photo_generator_node(state: ResearchState) -> dict:
@@ -141,7 +178,7 @@ async def photo_generator_node(state: ResearchState) -> dict:
     topic = state.get("topic", "carousel")
 
     # 1. Plan slide content (role + headline + body for each slide).
-    planner = _llm(max_tokens=4096, temperature=0.5).with_structured_output(SlidePlan)
+    planner = _llm(max_tokens=8192, temperature=0.5).with_structured_output(SlidePlan)
     plan = await planner.ainvoke(
         [
             SystemMessage(content=SLIDE_PLANNER_SYSTEM),
@@ -154,8 +191,15 @@ async def photo_generator_node(state: ResearchState) -> dict:
         ]
     )
 
-    # 2. Design all slides in parallel + write the caption in parallel.
+    # 2. Pick accent colors — one per slide, with hook and CTA bookended to
+    #    the same accent. Chosen in Python (deterministic hash of the topic)
+    #    so every parallel slide designer gets a stable assignment and the
+    #    set stays coherent — no extra LLM call needed.
     total = len(plan.slides)
+    accents = pick_accents(total, topic)
+    log.info("photo_generator_node: accents %s", accents)
+
+    # 3. Design all slides in parallel + write the caption in parallel.
     log.info("photo_generator_node: designing %d slides in parallel", total)
 
     captioner = _llm(max_tokens=2048, temperature=0.7).with_structured_output(CaptionOut)
@@ -173,14 +217,14 @@ async def photo_generator_node(state: ResearchState) -> dict:
     )
 
     svg_tasks = [
-        _design_slide(slide, i, total, topic)
+        _design_slide(slide, i, total, topic, accents[i - 1])
         for i, slide in enumerate(plan.slides, start=1)
     ]
 
-    svgs, cap = await asyncio.gather(asyncio.gather(*svg_tasks), caption_task)
+    pngs, cap = await asyncio.gather(asyncio.gather(*svg_tasks), caption_task)
 
     zip_path = build_zip(
-        svgs=svgs,
+        pngs=pngs,
         caption=cap.caption,
         hashtags=cap.hashtags,
         topic=topic,

@@ -96,6 +96,24 @@ Quiet mode (suppress node logs, still streams the report):
 python main.py -q "your topic here"
 ```
 
+### Carousel-only mode (skip the research pipeline)
+
+When you're iterating on the photo_generator — slide design, vibe prompt,
+palette — you don't want to pay for a full research run every time. Supply a
+pre-written report and only the photo_generator node runs:
+
+```bash
+# from a file
+python main.py "nebius token factory" --report-file ./sample_report.md
+
+# inline (short snippets only)
+python main.py "langgraph agents" --report "LangGraph is a framework for..."
+```
+
+The `topic` positional arg is still used (for the caption, slide planner
+context, and ZIP filename). The search/analyst/writer nodes are skipped
+entirely — nothing hits DuckDuckGo or crawl4ai in this mode.
+
 Unzip to inspect:
 ```bash
 unzip -l outputs/<file>.zip          # lists slide_01.png ... slide_0N.png + caption.txt
@@ -147,38 +165,77 @@ when you want to share a server across multiple clients — not the case here.
 
 ## How the carousel is built
 
-Three stages inside `photo_generator_node`, all using Claude:
+Three stages inside `photo_generator_node`:
 
 1. **Plan** — one structured-output call returns 5–8 `Slide`s with `role`,
    `headline`, `body`. First role is always `hook`, last is always `cta`.
-2. **Design** — one structured-output call *per slide*, run in parallel via
-   `asyncio.gather`. The model returns a full 1080×1080 SVG document. The only
-   things Python provides are (a) the design brief and (b) the specific slide's
-   copy — the layout, composition, and visual choices are the model's.
-3. **Assemble** — each SVG is validated with `xml.etree.ElementTree.fromstring`;
-   a failed slide gets one retry and then a minimal fallback. Valid SVGs are
-   rasterized by `cairosvg` to 1080×1080 PNG and zipped with `caption.txt`.
+2. **Design** — one fixed brand theme, one rotating accent per slide. Python
+   calls `carousel.pick_accents(total, topic)` which assigns a hex accent to
+   every slide (deterministic SHA-256 hash of the topic). Hook and CTA slides
+   are bookended to the same accent; body slides rotate through the remaining
+   palette. Then a structured-output designer call runs *per slide* in
+   parallel via `asyncio.gather`. Every call gets the same system prompt (the
+   full brand-theme spec: background, typography, components, bottom bar,
+   margins) plus its own assigned accent hex.
+3. **Assemble** — each SVG is validated (`xml.etree.ElementTree.fromstring`
+   plus a trial render via cairosvg); a failed slide gets up to 3 attempts
+   with a repair hint, then a minimal fallback. Valid SVGs are rasterized by
+   `cairosvg` to 1080×1080 PNG and zipped with `caption.txt`.
 
-### The vibe brief (`prompts.py::SVG_DESIGNER_SYSTEM`)
+### The brand theme
 
-The designer prompt locks down the feel without dictating layout:
+`prompts.py::SVG_DESIGNER_SYSTEM` pins a single brand theme that every slide
+executes:
 
-| Aspect | Direction |
-|--------|-----------|
-| Mood | Editorial, confident, warm. New Yorker typography × indie tech newsletter. |
-| Palette | Cream `#F0EEE6`, ink `#1F1F1F`, terracotta `#CC785C`, muted `#8C8C8C`. CTA slides invert to dark bg. |
-| Typography | `Inter, "Helvetica Neue", Arial, "DejaVu Sans", sans-serif`. 800-weight headlines, tight tracking; 400–500 body; uppercase muted eyebrow labels. |
-| Accents | Simple geometry only — a bar, a dot, a hairline. No illustrations, no emoji, no gradients. |
-| Whitespace | 80px safe margin. One idea per slide. Let it breathe. |
-| Rhythm | Same rails for every slide in a set — palette, font stack, margins — so slides feel like siblings, not strangers. |
-| Role | `hook`: oversized headline + eyebrow label + "Swipe →". `body`: headline top, body mid. `cta`: inverted dark bg, restated takeaway, terracotta CTA line. |
+- **Background**: near-black `#0A0A0F` with a linear gradient tinted by the
+  slide's accent at the midpoint, plus radial accent glows at upper-right
+  and lower-left, ~3% fractal-noise grain, and faint vertical guide lines
+  at x=72 / x=1008.
+- **Typography**: SF Pro Display for display/body, SF Mono for code/labels
+  (both with system fallbacks). Headlines 62–110px weight 800 letter-spacing
+  -2 to -4; body 22–28px; badge labels 19px uppercase letter-spacing +3.
+- **Layout**: 72px left/right safe margins, bottom bar anchored at y=1000
+  with a brand-initial circle mark on the left and a dot row on the right
+  (current slide is an elongated accent pill).
+- **Components**: filled accent badges on the hook, outlined elsewhere;
+  terminal blocks with traffic-light dots and mono prompts; step cards,
+  comparison tables with faint white dividers.
+- **Engagement cues**: circular "Swipe →" affordance on the hook, gradient
+  "FOLLOW FOR MORE →" pill with faint Save/Share/Comment capsules on the CTA.
 
-Edit `SVG_DESIGNER_SYSTEM` in `prompts.py` to change the vibe (e.g. swap palette,
-lean more playful, pick different typography). No code changes needed.
+### Rotating accents
 
-Fonts: DejaVu Sans is the reliable last-resort font in the stack since Cairo
-needs an actually-installed font file on the system — it ships with most Linux
-distros. Install Inter via `fc-cache` if you want the intended look.
+The one element that changes slide-to-slide is the accent color. Python
+picks accents deterministically from a fixed palette (red → orange →
+gold → green → purple → cyan → pink) via
+`carousel.pick_accents(total, topic)`. Hook and CTA slides share the same
+accent (bookend effect); body slides walk through the remaining palette.
+The accent drives the badge, headline highlight words, accent separator,
+glow tint, current-slide dot, bottom-bar mark, and card borders.
+
+### Consistency-by-construction
+
+Because every parallel designer call receives the same system prompt (with
+the full theme spec) and only the accent hex differs per slide, the whole
+set shares identical background, typography, margins, and components. Only
+composition (headline anchor, alignment, which supporting component appears)
+varies. A viewer scrolling the carousel reads it as one deliberately
+designed set with a color progression.
+
+### Changing the vibe
+
+- Edit `SVG_DESIGNER_SYSTEM` in `prompts.py` to tweak the background stack,
+  typography, components, or engagement cues.
+- Edit `ACCENT_PALETTE` in `carousel.py` to change the rotating color set
+  or its order.
+- To force a specific accent during testing, hardcode
+  `accents = ["#FF3B30"] * total` in `photo_generator_node` instead of
+  calling `pick_accents(total, topic)`.
+
+Fonts: the brand theme references `SF Pro Display` / `SF Mono` with fallbacks
+to `Helvetica Neue`, `Arial`, `DejaVu Sans`. Cairo needs an installed font
+file to render, so install SF Pro (or a close substitute like Inter) via
+`fc-cache` for the intended look — otherwise it falls back to DejaVu.
 
 ---
 
@@ -236,9 +293,8 @@ Expected after a full run:
 - **cairosvg import fails** → install the system libs listed under *Requirements*.
 - **crawl4ai fails with "Executable doesn't exist"** → you skipped `crawl4ai-setup`.
   Run it now: `crawl4ai-setup` or `python -m playwright install chromium --with-deps`.
-- **Fonts look generic** → Inter isn't installed; DejaVu Sans is being used. To
-  get Inter, install it (`fc-cache`) or bundle a TTF via `@font-face` inside the
-  SVG templates in `carousel.py`.
+- **Fonts look generic** → SF Pro / Inter aren't installed; DejaVu Sans is
+  being used. Install the desired family (`fc-cache`) for the intended look.
 - **DuckDuckGo rate-limits / empty results** → try fewer, more specific queries
   or add a short backoff. `ddgs` is a free service with no guarantees.
 - **`with_structured_output` validation error** → usually token pressure on long

@@ -30,6 +30,48 @@ class SlidePlan(BaseModel):
     slides: list[Slide] = Field(..., min_length=5, max_length=8)
 
 
+# The brand theme is fixed. The only thing that rotates across slides is the
+# accent color. Order loosely follows a warm→cool→warm sweep so swiping through
+# the carousel feels like a deliberate color progression.
+ACCENT_PALETTE: tuple[str, ...] = (
+    "#FF3B30",  # red
+    "#FF9500",  # orange
+    "#D4A24C",  # gold / copper
+    "#28C840",  # green
+    "#AF52DE",  # purple
+    "#32ADE6",  # cyan
+    "#FF2D92",  # pink
+)
+
+
+def pick_accents(total: int, topic: str) -> list[str]:
+    """Return a list of accent hex colors, one per slide.
+
+    Hook (slide 0) and CTA (slide -1) share the SAME accent — a bookend that
+    makes the carousel feel like it closes back on itself. Middle/body slides
+    rotate through the remaining palette in order, starting from a
+    deterministic offset derived from the topic so reruns are stable but
+    different topics take different paths through the palette.
+    """
+    if total <= 0:
+        return []
+    import hashlib
+
+    h = int(hashlib.sha256(topic.encode("utf-8")).hexdigest(), 16)
+    bookend = ACCENT_PALETTE[h % len(ACCENT_PALETTE)]
+    # middle accents cycle through the palette excluding the bookend color
+    middle_pool = [c for c in ACCENT_PALETTE if c != bookend]
+    start = (h // len(ACCENT_PALETTE)) % len(middle_pool)
+
+    accents: list[str] = []
+    for i in range(total):
+        if i == 0 or i == total - 1:
+            accents.append(bookend)
+        else:
+            accents.append(middle_pool[(start + i - 1) % len(middle_pool)])
+    return accents
+
+
 class SlideSVG(BaseModel):
     """Output of the per-slide SVG designer pass."""
     svg: str = Field(
@@ -85,6 +127,23 @@ def validate_svg(svg: str) -> str | None:
     return cleaned
 
 
+def svg_to_png(svg: str) -> bytes | None:
+    """
+    Try to rasterize an SVG string to a 1080×1080 PNG. Returns the PNG bytes on
+    success, or None if cairosvg blows up (invalid markers, unresolved refs,
+    unsupported features, etc.). The caller should treat None as "regenerate
+    this slide" rather than a hard error.
+    """
+    try:
+        return cairosvg.svg2png(
+            bytestring=svg.encode("utf-8"),
+            output_width=SIZE,
+            output_height=SIZE,
+        )
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def fallback_svg(headline: str, index: int, total: int) -> str:
     """Minimal safe slide used when the AI output fails validation."""
     safe = xml_escape((headline or "Slide").strip())
@@ -97,17 +156,15 @@ def fallback_svg(headline: str, index: int, total: int) -> str:
 
 
 def build_zip(
-    svgs: list[str],
+    pngs: list[bytes],
     caption: str,
     hashtags: list[str],
     topic: str,
     outputs_dir: Path = Path("outputs"),
 ) -> Path:
     """
-    Convert a list of SVG strings (one per slide, in order) to PNGs and bundle
-    them with caption.txt into a ZIP under `outputs_dir`. Returns the ZIP path.
-
-    The caller is responsible for validating each SVG before passing it in.
+    Bundle already-rendered slide PNGs with caption.txt into a ZIP under
+    `outputs_dir`. Returns the ZIP path.
     """
     outputs_dir.mkdir(parents=True, exist_ok=True)
 
@@ -121,13 +178,8 @@ def build_zip(
     zip_path = outputs_dir / f"{_slug(topic)}-{int(time.time())}.zip"
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
-        for i, svg in enumerate(svgs, start=1):
-            png_bytes = cairosvg.svg2png(
-                bytestring=svg.encode("utf-8"),
-                output_width=SIZE,
-                output_height=SIZE,
-            )
-            zf.writestr(f"slide_{i:02d}.png", png_bytes)
+        for i, png in enumerate(pngs, start=1):
+            zf.writestr(f"slide_{i:02d}.png", png)
         zf.writestr("caption.txt", caption_full)
 
     zip_path.write_bytes(buf.getvalue())

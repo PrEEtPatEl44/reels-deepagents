@@ -5,3 +5,7 @@ __pycache__/
 .venv/
 venv/
 .DS_Store
+sample_svg_for_styles/*
+*.png 
+*.log
+report.md
