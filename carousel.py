@@ -1,24 +1,23 @@
 import io
 import re
-import textwrap
 import time
 import zipfile
 from pathlib import Path
 from typing import Literal
+from xml.etree import ElementTree as ET
 from xml.sax.saxutils import escape as xml_escape
 
 import cairosvg
 from pydantic import BaseModel, Field
 
-# Anthropic-inspired palette
-BG = "#F0EEE6"
-INK = "#1F1F1F"
-ACCENT = "#CC785C"
-MUTED = "#8C8C8C"
-
-FONT_STACK = 'Inter, "Helvetica Neue", Arial, DejaVu Sans, sans-serif'
-
 SIZE = 1080
+
+# Fallback palette — only used by the emergency fallback renderer when the AI
+# returns invalid SVG. The AI itself is told the full palette in the prompt.
+_FALLBACK_BG = "#F0EEE6"
+_FALLBACK_INK = "#1F1F1F"
+_FALLBACK_MUTED = "#8C8C8C"
+_FALLBACK_FONT = 'Inter, "Helvetica Neue", Arial, "DejaVu Sans", sans-serif'
 
 
 class Slide(BaseModel):
@@ -31,6 +30,18 @@ class SlidePlan(BaseModel):
     slides: list[Slide] = Field(..., min_length=5, max_length=8)
 
 
+class SlideSVG(BaseModel):
+    """Output of the per-slide SVG designer pass."""
+    svg: str = Field(
+        ...,
+        description=(
+            "A complete SVG document starting with <svg xmlns=... width=1080 "
+            "height=1080 viewBox='0 0 1080 1080'>. No markdown, no commentary, "
+            "no code fences."
+        ),
+    )
+
+
 class CaptionOut(BaseModel):
     caption: str
     hashtags: list[str] = Field(default_factory=list)
@@ -41,112 +52,76 @@ def _slug(text: str, max_len: int = 40) -> str:
     return s[:max_len] or "carousel"
 
 
-def _wrap(text: str, width: int) -> list[str]:
-    lines: list[str] = []
-    for raw in text.splitlines() or [text]:
-        lines.extend(textwrap.wrap(raw, width=width) or [""])
-    return lines
+def _strip_fences(s: str) -> str:
+    """AI sometimes wraps SVG in ```svg ... ``` despite instructions. Strip it."""
+    s = s.strip()
+    if s.startswith("```"):
+        # remove opening fence (optionally with language tag) and trailing fence
+        s = re.sub(r"^```[a-zA-Z]*\s*", "", s)
+        if s.endswith("```"):
+            s = s[: -3]
+    return s.strip()
 
 
-def _tspans(lines: list[str], x: int, dy_first: int, dy: int) -> str:
-    parts = []
-    for i, line in enumerate(lines):
-        shift = dy_first if i == 0 else dy
-        parts.append(
-            f'<tspan x="{x}" dy="{shift}">{xml_escape(line)}</tspan>'
-        )
-    return "".join(parts)
+def validate_svg(svg: str) -> str | None:
+    """
+    Normalize + validate an AI-produced SVG string.
+
+    Returns the cleaned SVG string on success, or None if it doesn't parse as XML
+    or doesn't have an <svg> root.
+    """
+    if not svg:
+        return None
+    cleaned = _strip_fences(svg)
+    # Some models emit a leading XML declaration or DOCTYPE — that's fine for ET.
+    try:
+        root = ET.fromstring(cleaned)
+    except ET.ParseError:
+        return None
+    tag = root.tag.lower()
+    # ElementTree includes the namespace in the tag when present, e.g. "{http://...}svg".
+    if not (tag == "svg" or tag.endswith("}svg")):
+        return None
+    return cleaned
 
 
-def _render_hook(slide: Slide, index: int, total: int) -> str:
-    headline_lines = _wrap(slide.headline, width=16)
-    # Step font size down for long headlines
-    font_size = 108 if len(headline_lines) <= 2 else 88 if len(headline_lines) <= 3 else 72
-    body_lines = _wrap(slide.body, width=34) if slide.body else []
-
+def fallback_svg(headline: str, index: int, total: int) -> str:
+    """Minimal safe slide used when the AI output fails validation."""
+    safe = xml_escape((headline or "Slide").strip())
     return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{SIZE}" height="{SIZE}" viewBox="0 0 {SIZE} {SIZE}">
-  <rect width="{SIZE}" height="{SIZE}" fill="{BG}"/>
-  <rect x="80" y="80" width="120" height="12" fill="{ACCENT}"/>
-  <text x="80" y="140" font-family='{FONT_STACK}' font-size="28" font-weight="600" fill="{MUTED}" letter-spacing="4">DEEP RESEARCH</text>
-  <text x="80" y="460" font-family='{FONT_STACK}' font-size="{font_size}" font-weight="800" fill="{INK}">
-    {_tspans(headline_lines, 80, 0, int(font_size * 1.1))}
-  </text>
-  <text x="80" y="820" font-family='{FONT_STACK}' font-size="32" font-weight="400" fill="{MUTED}">
-    {_tspans(body_lines, 80, 0, 44)}
-  </text>
-  <text x="80" y="1000" font-family='{FONT_STACK}' font-size="24" font-weight="500" fill="{MUTED}">Swipe →</text>
-  <text x="{SIZE - 80}" y="1000" text-anchor="end" font-family='{FONT_STACK}' font-size="24" font-weight="500" fill="{MUTED}">{index:02d} / {total:02d}</text>
+  <rect width="{SIZE}" height="{SIZE}" fill="{_FALLBACK_BG}"/>
+  <text x="80" y="520" font-family='{_FALLBACK_FONT}' font-size="56" font-weight="800" fill="{_FALLBACK_INK}">{safe}</text>
+  <text x="80" y="1000" font-family='{_FALLBACK_FONT}' font-size="24" font-weight="500" fill="{_FALLBACK_MUTED}" letter-spacing="3">VISUAL UNAVAILABLE</text>
+  <text x="{SIZE - 80}" y="1000" text-anchor="end" font-family='{_FALLBACK_FONT}' font-size="24" font-weight="500" fill="{_FALLBACK_MUTED}">{index:02d} / {total:02d}</text>
 </svg>'''
 
 
-def _render_body(slide: Slide, index: int, total: int) -> str:
-    headline_lines = _wrap(slide.headline, width=22)
-    head_size = 72 if len(headline_lines) <= 2 else 60
-    body_lines = _wrap(slide.body, width=32)
-
-    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{SIZE}" height="{SIZE}" viewBox="0 0 {SIZE} {SIZE}">
-  <rect width="{SIZE}" height="{SIZE}" fill="{BG}"/>
-  <rect x="80" y="80" width="80" height="8" fill="{ACCENT}"/>
-  <text x="80" y="260" font-family='{FONT_STACK}' font-size="{head_size}" font-weight="800" fill="{INK}">
-    {_tspans(headline_lines, 80, 0, int(head_size * 1.15))}
-  </text>
-  <text x="80" y="600" font-family='{FONT_STACK}' font-size="38" font-weight="400" fill="{INK}">
-    {_tspans(body_lines, 80, 0, 54)}
-  </text>
-  <text x="{SIZE - 80}" y="1000" text-anchor="end" font-family='{FONT_STACK}' font-size="24" font-weight="500" fill="{MUTED}">{index:02d} / {total:02d}</text>
-</svg>'''
-
-
-def _render_cta(slide: Slide, index: int, total: int) -> str:
-    headline_lines = _wrap(slide.headline, width=18)
-    head_size = 92 if len(headline_lines) <= 2 else 72
-    body_lines = _wrap(slide.body, width=32) if slide.body else []
-
-    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{SIZE}" height="{SIZE}" viewBox="0 0 {SIZE} {SIZE}">
-  <rect width="{SIZE}" height="{SIZE}" fill="{INK}"/>
-  <rect x="80" y="80" width="120" height="12" fill="{ACCENT}"/>
-  <text x="80" y="440" font-family='{FONT_STACK}' font-size="{head_size}" font-weight="800" fill="{BG}">
-    {_tspans(headline_lines, 80, 0, int(head_size * 1.1))}
-  </text>
-  <text x="80" y="760" font-family='{FONT_STACK}' font-size="34" font-weight="400" fill="{BG}">
-    {_tspans(body_lines, 80, 0, 48)}
-  </text>
-  <text x="80" y="980" font-family='{FONT_STACK}' font-size="28" font-weight="700" fill="{ACCENT}" letter-spacing="3">FOLLOW FOR MORE →</text>
-  <text x="{SIZE - 80}" y="1000" text-anchor="end" font-family='{FONT_STACK}' font-size="24" font-weight="500" fill="{MUTED}">{index:02d} / {total:02d}</text>
-</svg>'''
-
-
-def _render_slide(slide: Slide, index: int, total: int) -> str:
-    if slide.role == "hook":
-        return _render_hook(slide, index, total)
-    if slide.role == "cta":
-        return _render_cta(slide, index, total)
-    return _render_body(slide, index, total)
-
-
-def render_carousel(
-    plan: SlidePlan,
+def build_zip(
+    svgs: list[str],
     caption: str,
     hashtags: list[str],
     topic: str,
     outputs_dir: Path = Path("outputs"),
 ) -> Path:
-    """Render the slide plan into a ZIP of PNGs + caption.txt. Returns the ZIP path."""
-    outputs_dir.mkdir(parents=True, exist_ok=True)
-    total = len(plan.slides)
+    """
+    Convert a list of SVG strings (one per slide, in order) to PNGs and bundle
+    them with caption.txt into a ZIP under `outputs_dir`. Returns the ZIP path.
 
-    caption_body = caption.strip()
+    The caller is responsible for validating each SVG before passing it in.
+    """
+    outputs_dir.mkdir(parents=True, exist_ok=True)
+
+    caption_body = (caption or "").strip()
     if hashtags:
         tag_line = " ".join(f"#{tag.lstrip('#').strip()}" for tag in hashtags if tag.strip())
-        caption_full = f"{caption_body}\n\n{tag_line}"
+        caption_full = f"{caption_body}\n\n{tag_line}" if caption_body else tag_line
     else:
         caption_full = caption_body
 
     zip_path = outputs_dir / f"{_slug(topic)}-{int(time.time())}.zip"
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
-        for i, slide in enumerate(plan.slides, start=1):
-            svg = _render_slide(slide, i, total)
+        for i, svg in enumerate(svgs, start=1):
             png_bytes = cairosvg.svg2png(
                 bytestring=svg.encode("utf-8"),
                 output_width=SIZE,

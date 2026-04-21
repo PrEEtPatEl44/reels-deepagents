@@ -1,27 +1,36 @@
+import asyncio
 import logging
 
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.prebuilt import create_react_agent
 
-from carousel import CaptionOut, SlidePlan, render_carousel
-from mcp_client import get_scrapegraph_tools
+from carousel import (
+    CaptionOut,
+    Slide,
+    SlidePlan,
+    SlideSVG,
+    build_zip,
+    fallback_svg,
+    validate_svg,
+)
 from prompts import (
     ANALYST_SYSTEM,
     CAPTION_SYSTEM,
     SEARCHER_SYSTEM,
     SLIDE_PLANNER_SYSTEM,
+    SVG_DESIGNER_SYSTEM,
     WRITER_SYSTEM,
 )
 from state import ResearchState
+from tools import RESEARCH_TOOLS
 
 log = logging.getLogger(__name__)
 
 MODEL = "claude-sonnet-4-6"
 
-# Singletons so we don't re-instantiate models or respawn the MCP child process per run.
+# Singleton so we don't rebuild the ReAct agent on every graph step.
 _searcher = None
-_mcp_client = None
 
 
 def _llm(max_tokens: int = 8192, temperature: float = 0.4) -> ChatAnthropic:
@@ -45,19 +54,19 @@ def _message_text(msg) -> str:
     return str(content)
 
 
-async def _get_searcher():
-    global _searcher, _mcp_client
+def _get_searcher():
+    global _searcher
     if _searcher is None:
-        tools, client = await get_scrapegraph_tools()
-        _mcp_client = client  # keep the stdio child alive
-        _searcher = create_react_agent(_llm(max_tokens=8192), tools, prompt=SEARCHER_SYSTEM)
-        log.info("Loaded %d ScrapeGraph MCP tools: %s", len(tools), [t.name for t in tools])
+        _searcher = create_react_agent(
+            _llm(max_tokens=8192), RESEARCH_TOOLS, prompt=SEARCHER_SYSTEM
+        )
+        log.info("Initialized searcher with tools: %s", [t.name for t in RESEARCH_TOOLS])
     return _searcher
 
 
 async def searcher_node(state: ResearchState) -> dict:
     log.info("searcher_node: researching topic %r", state["topic"])
-    agent = await _get_searcher()
+    agent = _get_searcher()
     result = await agent.ainvoke(
         {"messages": [HumanMessage(content=f"Research topic: {state['topic']}")]}
     )
@@ -90,11 +99,48 @@ async def writer_node(state: ResearchState) -> dict:
     return {"report": _message_text(resp)}
 
 
+async def _design_slide(
+    slide: Slide, index: int, total: int, topic: str
+) -> str:
+    """Ask the designer LLM for one slide's SVG. Return a validated SVG string,
+    falling back to a minimal safe SVG if the output can't be parsed."""
+    designer = _llm(max_tokens=3000, temperature=0.8).with_structured_output(SlideSVG)
+    user_brief = (
+        f"Carousel topic: {topic}\n"
+        f"Slide position: {index} of {total}\n"
+        f"Slide role: {slide.role}\n"
+        f"Headline: {slide.headline}\n"
+        f"Body: {slide.body or '(none — headline-only slide)'}\n\n"
+        "Design this single slide as a 1080×1080 SVG, following the design brief."
+    )
+
+    for attempt in (1, 2):
+        try:
+            result: SlideSVG = await designer.ainvoke(
+                [
+                    SystemMessage(content=SVG_DESIGNER_SYSTEM),
+                    HumanMessage(content=user_brief),
+                ]
+            )
+        except Exception:  # noqa: BLE001
+            log.exception("slide %d design call failed (attempt %d)", index, attempt)
+            continue
+
+        cleaned = validate_svg(result.svg)
+        if cleaned:
+            return cleaned
+        log.warning("slide %d SVG failed validation (attempt %d)", index, attempt)
+
+    log.warning("slide %d: using fallback SVG after design failures", index)
+    return fallback_svg(slide.headline, index, total)
+
+
 async def photo_generator_node(state: ResearchState) -> dict:
     log.info("photo_generator_node: planning slides and caption")
     report = state.get("report", "")
     topic = state.get("topic", "carousel")
 
+    # 1. Plan slide content (role + headline + body for each slide).
     planner = _llm(max_tokens=4096, temperature=0.5).with_structured_output(SlidePlan)
     plan = await planner.ainvoke(
         [
@@ -108,8 +154,12 @@ async def photo_generator_node(state: ResearchState) -> dict:
         ]
     )
 
+    # 2. Design all slides in parallel + write the caption in parallel.
+    total = len(plan.slides)
+    log.info("photo_generator_node: designing %d slides in parallel", total)
+
     captioner = _llm(max_tokens=2048, temperature=0.7).with_structured_output(CaptionOut)
-    cap = await captioner.ainvoke(
+    caption_task = captioner.ainvoke(
         [
             SystemMessage(content=CAPTION_SYSTEM),
             HumanMessage(
@@ -122,8 +172,15 @@ async def photo_generator_node(state: ResearchState) -> dict:
         ]
     )
 
-    zip_path = render_carousel(
-        plan=plan,
+    svg_tasks = [
+        _design_slide(slide, i, total, topic)
+        for i, slide in enumerate(plan.slides, start=1)
+    ]
+
+    svgs, cap = await asyncio.gather(asyncio.gather(*svg_tasks), caption_task)
+
+    zip_path = build_zip(
+        svgs=svgs,
         caption=cap.caption,
         hashtags=cap.hashtags,
         topic=topic,
