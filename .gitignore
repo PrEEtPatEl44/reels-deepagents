@@ -10,3 +10,4 @@ sample_svg_for_styles
 *.log
 report.md
 caption.txt
+.claude/
