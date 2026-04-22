@@ -1,33 +1,34 @@
-import asyncio
+import json
 import logging
+from pathlib import Path
 
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.prebuilt import create_react_agent
 
-from carousel import (
-    CaptionOut,
-    Slide,
-    SlidePlan,
-    SlideSVG,
-    build_zip,
-    fallback_svg,
-    pick_accents,
-    svg_to_png,
-    validate_svg,
-)
 from prompts import (
     ANALYST_SYSTEM,
-    CAPTION_SYSTEM,
+    BUILDER_SYSTEM,
+    DESIGNER_SYSTEM,
+    SCRIPTER_SYSTEM,
     SEARCHER_SYSTEM,
-    SLIDE_PLANNER_SYSTEM,
-    SVG_DESIGNER_SYSTEM,
     WRITER_SYSTEM,
 )
-
-SLIDE_DESIGN_ATTEMPTS = 3
 from state import ResearchState
 from tools import RESEARCH_TOOLS
+from video import (
+    DesignOut,
+    HTMLOut,
+    ScriptOut,
+    copy_styles_snapshot,
+    init_project,
+    load_skill_context,
+    run_lint,
+    run_render,
+    run_transcribe,
+    run_tts,
+    slugify,
+)
 
 log = logging.getLogger(__name__)
 
@@ -103,135 +104,117 @@ async def writer_node(state: ResearchState) -> dict:
     return {"report": _message_text(resp)}
 
 
-async def _design_slide(
-    slide: Slide,
-    index: int,
-    total: int,
-    topic: str,
-    accent: str,
-) -> bytes:
-    """Ask the designer LLM for one slide's SVG, validate it, and rasterize to
-    PNG. If anything fails — invalid XML, unresolved refs, a cairosvg crash —
-    regenerate the slide. After all attempts fail, return a rendered fallback."""
-    designer = _llm(max_tokens=8192, temperature=0.8).with_structured_output(SlideSVG)
-    user_brief_base = (
-        f"ACCENT FOR THIS SLIDE: {accent}\n"
-        "(Use this exact hex for the badge, headline highlight words, the "
-        "3px accent separator, the glow-gradient stops, the dot indicator "
-        "for the current slide, the bottom-bar logo mark, and any card "
-        "borders or icon-square tints. Every other element of the brand "
-        "theme stays fixed as defined in your system prompt.)\n\n"
-        "=== THIS SLIDE ===\n"
-        f"Carousel topic: {topic}\n"
-        f"Slide position: {index} of {total}\n"
-        f"Slide role: {slide.role}\n"
-        f"Headline: {slide.headline}\n"
-        f"Body: {slide.body or '(none — headline-only slide)'}\n\n"
-        "Design this single slide as a 1080×1080 SVG. Execute the brand "
-        "theme precisely; vary only composition."
-    )
-    repair_hint = (
-        "\n\nIMPORTANT: a previous attempt produced an SVG that could not be rendered. "
-        "Avoid marker references (marker-start, marker-end, marker-mid), avoid filter/"
-        "clipPath refs unless you also define them, avoid url(#...) references to IDs "
-        "that don't exist in this same document, and keep the structure simple."
-    )
-
-    for attempt in range(1, SLIDE_DESIGN_ATTEMPTS + 1):
-        user_brief = user_brief_base + (repair_hint if attempt > 1 else "")
-        try:
-            result: SlideSVG = await designer.ainvoke(
-                [
-                    SystemMessage(content=SVG_DESIGNER_SYSTEM),
-                    HumanMessage(content=user_brief),
-                ]
-            )
-        except Exception:  # noqa: BLE001
-            log.exception("slide %d design call failed (attempt %d)", index, attempt)
-            continue
-
-        cleaned = validate_svg(result.svg)
-        if not cleaned:
-            log.warning("slide %d SVG failed XML validation (attempt %d)", index, attempt)
-            continue
-
-        png = svg_to_png(cleaned)
-        if png is not None:
-            return png
-        log.warning(
-            "slide %d SVG parsed but failed to render (attempt %d) — regenerating",
-            index,
-            attempt,
-        )
-
-    log.warning("slide %d: using fallback SVG after %d failed attempts", index, SLIDE_DESIGN_ATTEMPTS)
-    fallback_png = svg_to_png(fallback_svg(slide.headline, index, total))
-    if fallback_png is None:
-        # Fallback SVG is hand-authored and known-safe; this branch should be unreachable.
-        raise RuntimeError(f"Failed to render fallback for slide {index}")
-    return fallback_png
+# ---------------------------------------------------------------------------
+# Video pipeline
+# ---------------------------------------------------------------------------
 
 
-async def photo_generator_node(state: ResearchState) -> dict:
-    log.info("photo_generator_node: planning slides and caption")
+async def scripter_node(state: ResearchState) -> dict:
+    log.info("scripter_node: drafting narration")
     report = state.get("report", "")
-    topic = state.get("topic", "carousel")
-
-    # 1. Plan slide content (role + headline + body for each slide).
-    planner = _llm(max_tokens=8192, temperature=0.5).with_structured_output(SlidePlan)
-    plan = await planner.ainvoke(
+    topic = state.get("topic", "")
+    scripter = _llm(max_tokens=2048, temperature=0.6).with_structured_output(ScriptOut)
+    result: ScriptOut = await scripter.ainvoke(
         [
-            SystemMessage(content=SLIDE_PLANNER_SYSTEM),
+            SystemMessage(content=SCRIPTER_SYSTEM),
             HumanMessage(
                 content=(
                     f"Topic: {topic}\n\n"
-                    f"Report to condense into carousel slides:\n\n{report}"
+                    f"Report to condense into a 20-35 second narration:\n\n{report}"
                 )
             ),
         ]
     )
+    slug = slugify(result.slug or result.title or topic)
+    return {"script": result.script, "title": result.title, "slug": slug}
 
-    # 2. Pick accent colors — one per slide, with hook and CTA bookended to
-    #    the same accent. Chosen in Python (deterministic hash of the topic)
-    #    so every parallel slide designer gets a stable assignment and the
-    #    set stays coherent — no extra LLM call needed.
-    total = len(plan.slides)
-    accents = pick_accents(total, topic)
-    log.info("photo_generator_node: accents %s", accents)
 
-    # 3. Design all slides in parallel + write the caption in parallel.
-    log.info("photo_generator_node: designing %d slides in parallel", total)
-
-    captioner = _llm(max_tokens=2048, temperature=0.7).with_structured_output(CaptionOut)
-    caption_task = captioner.ainvoke(
-        [
-            SystemMessage(content=CAPTION_SYSTEM),
-            HumanMessage(
-                content=(
-                    f"Topic: {topic}\n\n"
-                    f"Carousel slide plan (for alignment):\n{plan.model_dump_json(indent=2)}\n\n"
-                    f"Full report (for factual grounding):\n\n{report}"
-                )
-            ),
-        ]
-    )
-
-    svg_tasks = [
-        _design_slide(slide, i, total, topic, accents[i - 1])
-        for i, slide in enumerate(plan.slides, start=1)
-    ]
-
-    pngs, cap = await asyncio.gather(asyncio.gather(*svg_tasks), caption_task)
-
-    zip_path = build_zip(
-        pngs=pngs,
-        caption=cap.caption,
-        hashtags=cap.hashtags,
-        topic=topic,
-    )
-    log.info("photo_generator_node: wrote carousel ZIP to %s", zip_path)
+async def narrator_node(state: ResearchState) -> dict:
+    log.info("narrator_node: scaffolding project + TTS + transcribe")
+    slug = state["slug"]
+    script = state["script"]
+    project_dir = await init_project(slug)
+    audio_path = await run_tts(project_dir, script)
+    _, words = await run_transcribe(project_dir, audio_path)
+    log.info("narrator_node: %d words transcribed", len(words))
     return {
-        "slide_plan": [s.model_dump() for s in plan.slides],
-        "caption": cap.caption,
-        "carousel_zip_path": str(zip_path),
+        "project_dir": str(project_dir),
+        "audio_path": str(audio_path),
+        "transcript": words,
     }
+
+
+async def designer_node(state: ResearchState) -> dict:
+    log.info("designer_node: authoring DESIGN.md")
+    project_dir = Path(state["project_dir"])
+    context = load_skill_context("designer")
+    system = DESIGNER_SYSTEM.replace("{HF_CONTEXT}", context)
+    designer = _llm(max_tokens=8192, temperature=0.7).with_structured_output(DesignOut)
+    result: DesignOut = await designer.ainvoke(
+        [
+            SystemMessage(content=system),
+            HumanMessage(
+                content=(
+                    f"Topic: {state.get('topic', '')}\n"
+                    f"Video title: {state.get('title', '')}\n\n"
+                    f"Narration script:\n{state.get('script', '')}\n\n"
+                    f"Source report (for tonal grounding):\n{state.get('report', '')}"
+                )
+            ),
+        ]
+    )
+    design_path = project_dir / "DESIGN.md"
+    design_path.write_text(result.design_md, encoding="utf-8")
+    return {"design_brief": result.design_md}
+
+
+async def builder_node(state: ResearchState) -> dict:
+    log.info("builder_node: authoring index.html")
+    project_dir = Path(state["project_dir"])
+    context = load_skill_context("builder")
+    system = BUILDER_SYSTEM.replace("{HF_CONTEXT}", context)
+
+    audio_path = Path(state["audio_path"])
+    audio_filename = audio_path.name
+    words = state.get("transcript", [])
+    # Narration duration drives composition duration; add 3s tail for the
+    # Instagram follow overlay per the prompt contract.
+    spoken_end = max((w.get("end", 0.0) for w in words), default=0.0)
+    total_duration = max(spoken_end + 3.0, 6.0)
+
+    builder = _llm(max_tokens=16000, temperature=0.5).with_structured_output(HTMLOut)
+    result: HTMLOut = await builder.ainvoke(
+        [
+            SystemMessage(content=system),
+            HumanMessage(
+                content=(
+                    f"Topic: {state.get('topic', '')}\n"
+                    f"Video title: {state.get('title', '')}\n"
+                    f"Canvas: 1080x1920 portrait (9:16)\n"
+                    f"Audio filename (in project root): {audio_filename}\n"
+                    f"Narration spoken length: {spoken_end:.2f}s\n"
+                    f"Target composition duration: {total_duration:.2f}s "
+                    f"(narration + {total_duration - spoken_end:.2f}s Instagram follow overlay)\n\n"
+                    f"=== DESIGN.md (authoritative visual direction) ===\n"
+                    f"{state.get('design_brief', '')}\n\n"
+                    f"=== Narration script ===\n{state.get('script', '')}\n\n"
+                    f"=== Word-level transcript (JSON, seconds) ===\n"
+                    f"{json.dumps(words, indent=2)}"
+                )
+            ),
+        ]
+    )
+    index_path = project_dir / "index.html"
+    index_path.write_text(result.html, encoding="utf-8")
+    return {"html": result.html}
+
+
+async def renderer_node(state: ResearchState) -> dict:
+    log.info("renderer_node: lint + render")
+    project_dir = Path(state["project_dir"])
+    slug = state["slug"]
+    await run_lint(project_dir)
+    video_path = await run_render(project_dir)
+    copy_styles_snapshot(project_dir, slug)
+    log.info("renderer_node: video at %s", video_path)
+    return {"video_path": str(video_path)}

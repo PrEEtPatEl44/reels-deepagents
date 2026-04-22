@@ -17,7 +17,7 @@ def _setup_logging(verbose: bool) -> None:
 
 
 async def run_full(topic: str) -> dict:
-    """Full pipeline: searcher → analyst → writer → photo_generator."""
+    """Full pipeline: searcher → analyst → writer → scripter → narrator → designer → builder → renderer."""
     graph = build_graph()
 
     # Stream messages from the writer node only so the user sees the report live.
@@ -44,21 +44,29 @@ async def run_full(topic: str) -> dict:
     return final_state
 
 
-async def run_carousel_only(topic: str, report: str) -> dict:
-    """Skip research — run only the photo_generator node against a given report."""
-    # Import lazily so this path doesn't pull in the searcher/crawl4ai deps at parse time.
-    from nodes import photo_generator_node
+async def run_video_only(topic: str, report: str) -> dict:
+    """Skip research — run only the video-generation tail against a given report."""
+    # Import lazily so this path doesn't pull in searcher/crawl4ai deps at parse time.
+    from nodes import (
+        builder_node,
+        designer_node,
+        narrator_node,
+        renderer_node,
+        scripter_node,
+    )
 
-    state = {"topic": topic, "report": report}
-    produced = await photo_generator_node(state)
-    return {**state, **produced}
+    state: dict = {"topic": topic, "report": report}
+    for node in (scripter_node, narrator_node, designer_node, builder_node, renderer_node):
+        produced = await node(state)
+        state.update(produced)
+    return state
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Deep research + Instagram carousel pipeline.",
+        description="Deep research + HyperFrames video pipeline.",
     )
-    parser.add_argument("topic", nargs="+", help="Research topic (or caption seed when using --report-file).")
+    parser.add_argument("topic", nargs="+", help="Research topic (or video seed when using --report-file).")
     parser.add_argument("-q", "--quiet", action="store_true", help="Suppress node logs.")
     src = parser.add_mutually_exclusive_group()
     src.add_argument(
@@ -67,7 +75,7 @@ def main() -> int:
         metavar="PATH",
         help=(
             "Skip research; read the report from this file and run only the "
-            "photo_generator node. Useful for iterating on slide design."
+            "video-generation pipeline. Useful for iterating on video design."
         ),
     )
     src.add_argument(
@@ -91,18 +99,14 @@ def main() -> int:
             report = args.report_file.read_text(encoding="utf-8")
         else:
             report = args.report
-        print(f"[carousel-only mode] using report of {len(report)} chars; topic={topic!r}")
-        final = asyncio.run(run_carousel_only(topic, report))
+        print(f"[video-only mode] using report of {len(report)} chars; topic={topic!r}")
+        final = asyncio.run(run_video_only(topic, report))
     else:
         final = asyncio.run(run_full(topic))
 
-    zip_path = final.get("carousel_zip_path")
-    caption = final.get("caption")
-    if zip_path:
-        print(f"Carousel ZIP: {zip_path}")
-    if caption:
-        print("\n=== CAPTION ===\n")
-        print(caption)
+    video_path = final.get("video_path")
+    if video_path:
+        print(f"Video: {video_path}")
     return 0
 
 

@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Anthropic Just Disrupted Design SaaS</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0d0d0f; width: 1080px; height: 1920px; overflow: hidden; }
+
+  [data-composition-id="main-comp"] {
+    position: relative;
+    width: 1080px;
+    height: 1920px;
+    background: #0d0d0f;
+    overflow: hidden;
+    font-family: 'Barlow Condensed', sans-serif;
+  }
+
+  /* ── SCENES ── */
+  .scene {
+    position: absolute;
+    top: 0; left: 0;
+    width: 1080px;
+    height: 1920px;
+    overflow: hidden;
+  }
+
+  /* ── BACKGROUND ELEMENTS ── */
+  .bg-glow {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  /* ── SCENE 1: HOOK ── */
+  #s1 { background: #0d0d0f; }
+  #s1-glow {
+    width: 900px; height: 900px;
+    background: radial-gradient(circle, rgba(232,83,26,0.13) 0%, rgba(13,13,15,0) 70%);
+    top: 200px; left: 90px;
+  }
+  #s1-ghost {
+    position: absolute;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 320px;
+    color: rgba(61,61,69,0.18);
+    letter-spacing: -0.02em;
+    top: 60px; left: -40px;
+    line-height: 1;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .s1-content {
+    position: absolute;
+    top: 0; left: 0;
+    width: 1080px; height: 1920px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 120px 80px;
+    gap: 0;
+  }
+  #s1-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 28px;
+    letter-spacing: 0.08em;
+    color: #E8531A;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+  #s1-rule {
+    width: 80px; height: 3px;
+    background: #E8531A;
+    border-radius: 2px;
+    margin-bottom: 32px;
+  }
+  #s1-headline {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 120px;
+    letter-spacing: -0.02em;
+    color: #f0ede8;
+    line-height: 0.95;
+    text-transform: uppercase;
+    margin-bottom: 40px;
+  }
+  #s1-sub {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 52px;
+    letter-spacing: -0.01em;
+    color: #f0ede8;
+    line-height: 1.1;
+    max-width: 900px;
+    margin-bottom: 48px;
+  }
+  #s1-stat-block {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 16px;
+    margin-top: 8px;
+  }
+  #s1-stat-num {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 140px;
+    letter-spacing: -0.02em;
+    color: #C1121F;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  #s1-stat-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 36px;
+    letter-spacing: 0.04em;
+    color: #f0ede8;
+    padding-bottom: 24px;
+    text-transform: uppercase;
+  }
+
+  /* ── SCENE 2: CLAUDE DESIGN SPECS ── */
+  #s2 { background: #0d0d0f; }
+  #s2-glow {
+    width: 800px; height: 700px;
+    background: radial-gradient(circle, rgba(232,83,26,0.10) 0%, rgba(13,13,15,0) 70%);
+    top: 300px; left: 140px;
+  }
+  #s2-ghost {
+    position: absolute;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 260px;
+    color: rgba(61,61,69,0.15);
+    letter-spacing: -0.02em;
+    top: 80px; right: -60px;
+    line-height: 1;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .s2-content {
+    position: absolute;
+    top: 0; left: 0;
+    width: 1080px; height: 1920px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 120px 80px;
+    gap: 0;
+  }
+  #s2-eyebrow {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 28px;
+    letter-spacing: 0.08em;
+    color: #E8531A;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  #s2-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 110px;
+    letter-spacing: -0.02em;
+    color: #f0ede8;
+    line-height: 0.95;
+    text-transform: uppercase;
+    margin-bottom: 44px;
+  }
+  #s2-divider {
+    width: 100%; height: 2px;
+    background: #3d3d45;
+    margin-bottom: 44px;
+  }
+  .s2-spec-row {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 20px 0;
+    border-bottom: 1px solid #3d3d45;
+  }
+  .s2-spec-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 400;
+    font-size: 30px;
+    letter-spacing: 0.08em;
+    color: #f0ede8;
+    text-transform: uppercase;
+  }
+  .s2-spec-value {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 52px;
+    letter-spacing: -0.01em;
+    color: #E8531A;
+    font-variant-numeric: tabular-nums;
+  }
+  .s2-spec-value.neutral {
+    color: #f0ede8;
+  }
+  #s2-accuracy-block {
+    margin-top: 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  #s2-accuracy-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 400;
+    font-size: 30px;
+    letter-spacing: 0.08em;
+    color: #f0ede8;
+    text-transform: uppercase;
+  }
+  #s2-accuracy-num {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 160px;
+    letter-spacing: -0.02em;
+    color: #E8531A;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  #s2-accuracy-sub {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 36px;
+    letter-spacing: 0.04em;
+    color: #f0ede8;
+    text-transform: uppercase;
+  }
+
+  /* ── SCENE 3: FIGMA COMPARISON ── */
+  #s3 { background: #0d0d0f; }
+  #s3-glow {
+    width: 700px; height: 700px;
+    background: radial-gradient(circle, rgba(232,83,26,0.09) 0%, rgba(13,13,15,0) 70%);
+    top: 400px; left: 190px;
+  }
+  .s3-content {
+    position: absolute;
+    top: 0; left: 0;
+    width: 1080px; height: 1920px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 120px 80px;
+    gap: 0;
+  }
+  #s3-eyebrow {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 28px;
+    letter-spacing: 0.08em;
+    color: #E8531A;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  #s3-headline {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 96px;
+    letter-spacing: -0.02em;
+    color: #f0ede8;
+    line-height: 0.95;
+    text-transform: uppercase;
+    margin-bottom: 48px;
+  }
+  .s3-compare-card {
+    background: #3d3d45;
+    border-radius: 4px;
+    padding: 32px 40px;
+    margin-bottom: 20px;
+  }
+  .s3-card-brand {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 52px;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .s3-card-brand.claude { color: #E8531A; }
+  .s3-card-brand.figma { color: #f0ede8; }
+  .s3-card-model {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 36px;
+    letter-spacing: 0.02em;
+    color: #f0ede8;
+    margin-bottom: 4px;
+  }
+  .s3-card-tier {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 400;
+    font-size: 28px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .s3-card-tier.top { color: #E8531A; }
+  .s3-card-tier.lower { color: #FF8C5A; }
+  #s3-gap-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 64px;
+    letter-spacing: -0.01em;
+    color: #E8531A;
+    text-transform: uppercase;
+    margin-top: 32px;
+    text-align: center;
+  }
+
+  /* ── SCENE 4: ROADMAP CONTROL ── */
+  #s4 { background: #0d0d0f; }
+  #s4-glow {
+    width: 900px; height: 800px;
+    background: radial-gradient(circle, rgba(232,83,26,0.11) 0%, rgba(13,13,15,0) 70%);
+    top: 250px; left: 90px;
+  }
+  #s4-ghost {
+    position: absolute;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 280px;
+    color: rgba(61,61,69,0.14);
+    letter-spacing: -0.02em;
+    bottom: 200px; left: -30px;
+    line-height: 1;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .s4-content {
+    position: absolute;
+    top: 0; left: 0;
+    width: 1080px; height: 1920px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 120px 80px;
+    gap: 0;
+  }
+  #s4-eyebrow {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 28px;
+    letter-spacing: 0.08em;
+    color: #E8531A;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  #s4-headline {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 110px;
+    letter-spacing: -0.02em;
+    color: #f0ede8;
+    line-height: 0.95;
+    text-transform: uppercase;
+    margin-bottom: 48px;
+  }
+  #s4-rule {
+    width: 100%; height: 2px;
+    background: #3d3d45;
+    margin-bottom: 40px;
+  }
+  #s4-body {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 400;
+    font-size: 36px;
+    letter-spacing: 0.02em;
+    color: #f0ede8;
+    line-height: 1.4;
+    max-width: 900px;
+    margin-bottom: 48px;
+  }
+  #s4-highlight {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 64px;
+    letter-spacing: -0.01em;
+    color: #E8531A;
+    text-transform: uppercase;
+    line-height: 1;
+    max-width: 900px;
+    margin-bottom: 32px;
+  }
+  #s4-figma-note {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 36px;
+    letter-spacing: 0.02em;
+    color: #FF8C5A;
+    max-width: 900px;
+  }
+
+  /* ── SCENE 5: CONCLUSION ── */
+  #s5 { background: #0d0d0f; }
+  #s5-glow {
+    width: 1000px; height: 900px;
+    background: radial-gradient(circle, rgba(232,83,26,0.14) 0%, rgba(13,13,15,0) 70%);
+    top: 200px; left: 40px;
+  }
+  #s5-ghost {
+    position: absolute;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 300px;
+    color: rgba(61,61,69,0.13);
+    letter-spacing: -0.02em;
+    top: 100px; left: -50px;
+    line-height: 1;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .s5-content {
+    position: absolute;
+    top: 0; left: 0;
+    width: 1080px; height: 1920px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 120px 80px;
+    gap: 0;
+  }
+  #s5-eyebrow {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 28px;
+    letter-spacing: 0.08em;
+    color: #E8531A;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  #s5-headline {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 120px;
+    letter-spacing: -0.02em;
+    color: #f0ede8;
+    line-height: 0.95;
+    text-transform: uppercase;
+    margin-bottom: 40px;
+  }
+  #s5-rule {
+    width: 120px; height: 3px;
+    background: #E8531A;
+    border-radius: 2px;
+    margin-bottom: 40px;
+  }
+  #s5-body {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 52px;
+    letter-spacing: -0.01em;
+    color: #f0ede8;
+    line-height: 1.15;
+    max-width: 900px;
+    margin-bottom: 48px;
+  }
+  #s5-coda {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 72px;
+    letter-spacing: -0.01em;
+    color: #E8531A;
+    text-transform: uppercase;
+    line-height: 1;
+    max-width: 900px;
+  }
+
+  /* ── INSTAGRAM OVERLAY ── */
+  #s-ig {
+    background: #0d0d0f;
+    z-index: 100;
+  }
+  #ig-glow {
+    position: absolute;
+    width: 1200px; height: 1200px;
+    background: radial-gradient(circle, rgba(232,83,26,0.12) 0%, rgba(13,13,15,0) 70%);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -55%);
+    pointer-events: none;
+  }
+  .ig-content {
+    position: absolute;
+    top: 0; left: 0;
+    width: 1080px; height: 1920px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+  }
+  #ig-rule {
+    width: 120px; height: 2px;
+    background: #E8531A;
+    border-radius: 2px;
+    margin-bottom: 32px;
+  }
+  #ig-handle {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 72px;
+    letter-spacing: -0.01em;
+    color: #f0ede8;
+    text-align: center;
+    margin-bottom: 48px;
+  }
+  #ig-btn {
+    width: 320px; height: 64px;
+    background: #E8531A;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+  }
+  #ig-btn-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 28px;
+    letter-spacing: 0.12em;
+    color: #0d0d0f;
+    text-transform: uppercase;
+  }
+  #ig-sub {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 400;
+    font-size: 26px;
+    color: #3d3d45;
+    text-align: center;
+  }
+
+  /* ── CAPTION SCRIM ── */
+  #caption-scrim {
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 1080px; height: 280px;
+    background: linear-gradient(to bottom, rgba(13,13,15,0) 0%, rgba(13,13,15,0.82) 100%);
+    pointer-events: none;
+    z-index: 50;
+  }
+
+  /* ── CAPTION CONTAINER ── */
+  #caption-container {
+    position: absolute;
+    bottom: 140px;
+    left: 0;
+    width: 1080px;
+    display: flex;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 60;
+  }
+  .caption-group {
+    position: relative;
+    max-width: 900px;
+    width: 900px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 50px;
+    color: #f0ede8;
+    line-height: 1.2;
+    opacity: 0;
+    visibility: hidden;
+  }
+  .caption-group .cap-line {
+    display: block;
+    position: relative;
+  }
+  .cap-word {
+    display: inline;
+    position: relative;
+    color: #f0ede8;
+    transition: color 0s;
+  }
+  .cap-word.active {
+    color: #E8531A;
+  }
+  .cap-underline {
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    height: 3px;
+    background: #E8531A;
+    border-radius: 2px;
+    width: 0;
+    pointer-events: none;
+  }
+
+  /* ── TRANSITION FLASH OVERLAY ── */
+  #flash-overlay {
+    position: absolute;
+    top: 0; left: 0;
+    width: 1080px; height: 1920px;
+    background: #0d0d0f;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 200;
+  }
+</style>
+</head>
+<body>
+<div data-composition-id="main-comp" data-width="1080" data-height="1920" data-start="0" data-duration="34.70">
+
+  <!-- AUDIO -->
+  <audio id="el-audio" data-start="0" data-duration="31.70" data-track-index="0" src="narration.wav" data-volume="1"></audio>
+
+  <!-- FLASH OVERLAY for transitions -->
+  <div id="flash-overlay"></div>
+
+  <!-- CAPTION SCRIM (always visible during narration) -->
+  <div id="caption-scrim"></div>
+
+  <!-- ══════════════════════════════════════════════
+       SCENE 1: HOOK — Anthropic crashed Figma's stock
+       t=0 → t=6.8s
+  ══════════════════════════════════════════════ -->
+  <div id="s1" class="scene" data-start="0" data-duration="6.8" data-track-index="1">
+    <div id="s1-glow" class="bg-glow"></div>
+    <div id="s1-ghost">CRASH</div>
+    <div class="s1-content">
+      <div id="s1-label">BREAKING</div>
+      <div id="s1-rule"></div>
+      <div id="s1-headline">ANTHROPIC<br>DISRUPTS<br>DESIGN</div>
+      <div id="s1-sub">Figma's stock crashed overnight.</div>
+      <div id="s1-stat-block">
+        <div id="s1-stat-num">−7.28%</div>
+        <div id="s1-stat-label">overnight</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       SCENE 2: CLAUDE DESIGN SPECS
+       t=6.8 → t=14.0s
+  ══════════════════════════════════════════════ -->
+  <div id="s2" class="scene" data-start="6.8" data-duration="7.2" data-track-index="1">
+    <div id="s2-glow" class="bg-glow"></div>
+    <div id="s2-ghost">OPUS</div>
+    <div class="s2-content">
+      <div id="s2-eyebrow">Claude Design</div>
+      <div id="s2-title">HIGHEST<br>TIER</div>
+      <div id="s2-divider"></div>
+      <div class="s2-spec-row" id="s2-row1">
+        <span class="s2-spec-label">Model</span>
+        <span class="s2-spec-value">Opus 4.7</span>
+      </div>
+      <div class="s2-spec-row" id="s2-row2">
+        <span class="s2-spec-label">Tier</span>
+        <span class="s2-spec-value neutral">Top</span>
+      </div>
+      <div class="s2-spec-row" id="s2-row3">
+        <span class="s2-spec-label">Price</span>
+        <span class="s2-spec-value neutral">FREE</span>
+      </div>
+      <div id="s2-accuracy-block">
+        <div id="s2-accuracy-label">Visual Accuracy</div>
+        <div id="s2-accuracy-num">98.5%</div>
+        <div id="s2-accuracy-sub">in benchmarks</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       SCENE 3: FIGMA COMPARISON
+       t=14.0 → t=20.5s
+  ══════════════════════════════════════════════ -->
+  <div id="s3" class="scene" data-start="14.0" data-duration="6.5" data-track-index="1">
+    <div id="s3-glow" class="bg-glow"></div>
+    <div class="s3-content">
+      <div id="s3-eyebrow">The Model Gap</div>
+      <div id="s3-headline">FIGMA MAKE<br>VS CLAUDE</div>
+      <div class="s3-compare-card" id="s3-card-claude">
+        <div class="s3-card-brand claude">Claude Design</div>
+        <div class="s3-card-model">Opus 4.7</div>
+        <div class="s3-card-tier top">▲ HIGHEST TIER</div>
+      </div>
+      <div class="s3-compare-card" id="s3-card-figma">
+        <div class="s3-card-brand figma">Figma Make</div>
+        <div class="s3-card-model">Sonnet 4.5</div>
+        <div class="s3-card-tier lower">▼ LOWER TIER</div>
+      </div>
+      <div id="s3-gap-label">NOT A QUIRK</div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       SCENE 4: ROADMAP CONTROL
+       t=20.5 → t=27.5s
+  ══════════════════════════════════════════════ -->
+  <div id="s4" class="scene" data-start="20.5" data-duration="7.0" data-track-index="1">
+    <div id="s4-glow" class="bg-glow"></div>
+    <div id="s4-ghost">ROADMAP</div>
+    <div class="s4-content">
+      <div id="s4-eyebrow">Strategic Reality</div>
+      <div id="s4-headline">ANTHROPIC<br>OWNS THE<br>ROADMAP</div>
+      <div id="s4-rule"></div>
+      <div id="s4-body">It will always ship its best model to its own products first.</div>
+      <div id="s4-highlight">FIGMA FUNDED<br>THAT ROADMAP.</div>
+      <div id="s4-figma-note">Figma helped build the weapon aimed at it.</div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       SCENE 5: CONCLUSION
+       t=27.5 → t=31.7s
+  ══════════════════════════════════════════════ -->
+  <div id="s5" class="scene" data-start="27.5" data-duration="4.2" data-track-index="1">
+    <div id="s5-glow" class="bg-glow"></div>
+    <div id="s5-ghost">NOW</div>
+    <div class="s5-content">
+      <div id="s5-eyebrow">The Disruption</div>
+      <div id="s5-headline">FOUNDATION<br>MODEL<br>EATS SAAS</div>
+      <div id="s5-rule"></div>
+      <div id="s5-body">Design is just the first market.</div>
+      <div id="s5-coda">WHO'S NEXT?</div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       INSTAGRAM FOLLOW OVERLAY
+       t=31.7 → t=34.7s
+  ══════════════════════════════════════════════ -->
+  <div id="s-ig" class="scene" data-start="31.7" data-duration="3.0" data-track-index="1">
+    <div id="ig-glow"></div>
+    <div class="ig-content">
+      <div id="ig-rule"></div>
+      <div id="ig-handle">@YourHandle</div>
+      <div id="ig-btn">
+        <span id="ig-btn-label">FOLLOW FOR MORE</span>
+      </div>
+      <div id="ig-sub">New drops every week.</div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       CAPTION CONTAINER
+  ══════════════════════════════════════════════ -->
+  <div id="caption-container">
+    <!-- Groups generated by JS below -->
+  </div>
+
+</div><!-- end composition -->
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  // ── WORD TRANSCRIPT ──
+  var WORDS = [
+    { text: "Anthropic", start: 0.03, end: 0.47 },
+    { text: "just", start: 0.47, end: 0.7 },
+    { text: "launched", start: 0.7, end: 1.13 },
+    { text: "a", start: 1.13, end: 1.18 },
+    { text: "design", start: 1.18, end: 1.49 },
+    { text: "tool", start: 1.55, end: 1.76 },
+    { text: "and", start: 1.76, end: 1.86 },
+    { text: "it", start: 1.86, end: 1.88 },
+    { text: "crashed", start: 1.97, end: 2.21 },
+    { text: "Figma's", start: 2.36, end: 2.7 },
+    { text: "stock", start: 2.76, end: 3.03 },
+    { text: "7,", start: 3.03, end: 3.41 },
+    { text: "28%", start: 3.54, end: 4.24 },
+    { text: "overnight.", start: 4.24, end: 5.28 },
+    { text: "Claude", start: 5.31, end: 5.62 },
+    { text: "Design", start: 5.63, end: 5.98 },
+    { text: "runs", start: 5.98, end: 6.22 },
+    { text: "on", start: 6.22, end: 6.34 },
+    { text: "Opus", start: 6.34, end: 6.57 },
+    { text: "4,", start: 6.57, end: 6.86 },
+    { text: "7", start: 6.86, end: 7.04 },
+    { text: "their", start: 7.04, end: 7.34 },
+    { text: "highest", start: 7.34, end: 7.71 },
+    { text: "tier", start: 7.75, end: 7.98 },
+    { text: "model", start: 7.98, end: 8.29 },
+    { text: "hitting", start: 8.29, end: 8.68 },
+    { text: "98,", start: 8.82, end: 9.13 },
+    { text: "5%", start: 9.22, end: 9.36 },
+    { text: "visual", start: 9.39, end: 9.74 },
+    { text: "accuracy", start: 9.74, end: 9.89 },
+    { text: "and", start: 10.35, end: 10.44 },
+    { text: "benchmarks.", start: 10.5, end: 11.32 },
+    { text: "It", start: 11.35, end: 11.41 },
+    { text: "is", start: 11.41, end: 11.44 },
+    { text: "free", start: 11.5, end: 11.66 },
+    { text: "for", start: 11.74, end: 11.79 },
+    { text: "existing", start: 11.9, end: 12.22 },
+    { text: "Claude", start: 12.22, end: 12.51 },
+    { text: "subscribers.", start: 12.51, end: 13.2 },
+    { text: "Meanwhile,", start: 13.27, end: 13.97 },
+    { text: "Figma", start: 14.03, end: 14.31 },
+    { text: "make", start: 14.31, end: 14.58 },
+    { text: "runs", start: 14.58, end: 14.85 },
+    { text: "on", start: 14.85, end: 14.97 },
+    { text: "Sonnet", start: 14.99, end: 15.38 },
+    { text: "4,", start: 15.38, end: 15.67 },
+    { text: "5", start: 15.71, end: 15.91 },
+    { text: "the", start: 15.91, end: 16.11 },
+    { text: "lower", start: 16.11, end: 16.45 },
+    { text: "tier", start: 16.45, end: 16.64 },
+    { text: "Anthropic", start: 16.78, end: 17.32 },
+    { text: "sells", start: 17.32, end: 17.66 },
+    { text: "to", start: 17.66, end: 17.79 },
+    { text: "API", start: 17.79, end: 17.85 },
+    { text: "customers.", start: 18.41, end: 18.8 },
+    { text: "That", start: 18.83, end: 19.03 },
+    { text: "gap", start: 19.03, end: 19.14 },
+    { text: "is", start: 19.22, end: 19.27 },
+    { text: "not", start: 19.38, end: 19.48 },
+    { text: "a", start: 19.48, end: 19.52 },
+    { text: "launch", start: 19.59, end: 19.88 },
+    { text: "quirk,", start: 19.88, end: 20.25 },
+    { text: "Anthropic", start: 20.28, end: 20.78 },
+    { text: "controls", start: 20.82, end: 21.23 },
+    { text: "the", start: 21.27, end: 21.42 },
+    { text: "model", start: 21.42, end: 21.7 },
+    { text: "roadmap.", start: 21.79, end: 22.37 },
+    { text: "So", start: 22.43, end: 22.52 },
+    { text: "it", start: 22.58, end: 22.66 },
+    { text: "will", start: 22.66, end: 22.87 },
+    { text: "always", start: 22.98, end: 23.31 },
+    { text: "ship", start: 23.31, end: 23.57 },
+    { text: "its", start: 23.57, end: 23.76 },
+    { text: "best", start: 23.76, end: 24.02 },
+    { text: "to", start: 24.02, end: 24.13 },
+    { text: "its", start: 24.15, end: 24.28 },
+    { text: "own", start: 24.37, end: 24.53 },
+    { text: "products", start: 24.53, end: 25.05 },
+    { text: "first.", start: 25.05, end: 25.6 },
+    { text: "Figma", start: 25.63, end: 25.87 },
+    { text: "helped", start: 25.87, end: 26.2 },
+    { text: "fund", start: 26.2, end: 26.42 },
+    { text: "that", start: 26.42, end: 26.6 },
+    { text: "roadmap.", start: 26.65, end: 27.22 },
+    { text: "Foundation", start: 27.25, end: 27.88 },
+    { text: "Modeler", start: 27.88, end: 28.33 },
+    { text: "SA-S", start: 28.34, end: 28.59 },
+    { text: "disruption", start: 28.59, end: 29.2 },
+    { text: "is", start: 29.25, end: 29.42 },
+    { text: "here,", start: 29.42, end: 29.9 },
+    { text: "design", start: 29.9, end: 30.26 },
+    { text: "is", start: 30.27, end: 30.39 },
+    { text: "just", start: 30.39, end: 30.62 },
+    { text: "the", start: 30.76, end: 30.79 },
+    { text: "first", start: 30.83, end: 31.07 },
+    { text: "market.", start: 31.16, end: 31.7 }
+  ];
+
+  // ── WORD GROUPING (3-5 words, break at pauses > 150ms) ──
+  function buildGroups(words) {
+    var groups = [];
+    var current = [];
+    var MAX_WORDS = 4;
+
+    for (var i = 0; i < words.length; i++) {
+      current.push(words[i]);
+      var isLast = (i === words.length - 1);
+      var nextGap = !isLast ? (words[i + 1].start - words[i].end) : 999;
+      var atMax = (current.length >= MAX_WORDS);
+      var bigPause = (nextGap > 0.18);
+
+      if (isLast || atMax || bigPause) {
+        groups.push({
+          words: current.slice(),
+          start: current[0].start - 0.04,
+          end: current[current.length - 1].end + 0.08
+        });
+        current = [];
+      }
+    }
+    return groups;
+  }
+
+  var GROUPS = buildGroups(WORDS);
+
+  // ── BUILD CAPTION DOM ──
+  var container = document.getElementById('caption-container');
+  GROUPS.forEach(function (group, gi) {
+    var el = document.createElement('div');
+    el.className = 'caption-group';
+    el.id = 'cg-' + gi;
+    el.style.opacity = '0';
+    el.style.visibility = 'hidden';
+
+    var lineEl = document.createElement('span');
+    lineEl.className = 'cap-line';
+
+    group.words.forEach(function (word, wi) {
+      var wordEl = document.createElement('span');
+      wordEl.className = 'cap-word';
+      wordEl.id = 'cg-' + gi + '-w' + wi;
+      wordEl.textContent = word.text + (wi < group.words.length - 1 ? '\u00a0' : '');
+
+      var underline = document.createElement('span');
+      underline.className = 'cap-underline';
+      underline.id = 'cg-' + gi + '-u' + wi;
+      wordEl.appendChild(underline);
+
+      lineEl.appendChild(wordEl);
+    });
+
+    el.appendChild(lineEl);
+    container.appendChild(el);
+  });
+
+  // ── MAIN TIMELINE ──
+  var tl = gsap.timeline({ paused: true });
+
+  // ════════════════════════════════════════════════
+  // SCENE 1 ENTRANCE (t=0)
+  // ════════════════════════════════════════════════
+  tl.set('#s1', { opacity: 1 }, 0);
+  tl.from('#s1-ghost', { x: -120, opacity: 0, duration: 0.7, ease: 'expo.out' }, 0.1);
+  tl.from('#s1-glow', { opacity: 0, scale: 0.7, duration: 0.9, ease: 'sine.inOut' }, 0.1);
+  tl.from('#s1-label', { x: -60, opacity: 0, duration: 0.45, ease: 'expo.out' }, 0.15);
+  tl.from('#s1-rule', { scaleX: 0, transformOrigin: 'left center', duration: 0.35, ease: 'power4.out' }, 0.28);
+  tl.from('#s1-headline', { y: 80, opacity: 0, duration: 0.5, ease: 'expo.out' }, 0.32);
+  tl.from('#s1-sub', { x: 50, opacity: 0, duration: 0.45, ease: 'power3.out' }, 0.5);
+  tl.from('#s1-stat-num', { y: 60, opacity: 0, duration: 0.35, ease: 'power4.out' }, 0.62);
+  tl.from('#s1-stat-label', { opacity: 0, duration: 0.4, ease: 'power2.out' }, 0.78);
+
+  // ── FLASH TRANSITION 1→2 at t=6.5 ──
+  tl.to('#flash-overlay', { opacity: 1, duration: 0.08, ease: 'power4.out' }, 6.5);
+  tl.to('#flash-overlay', { opacity: 0, duration: 0.12, ease: 'power4.in' }, 6.62);
+
+  // ════════════════════════════════════════════════
+  // SCENE 2 ENTRANCE (t=6.8)
+  // ════════════════════════════════════════════════
+  tl.from('#s2-ghost', { x: 100, opacity: 0, duration: 0.65, ease: 'expo.out' }, 6.85);
+  tl.from('#s2-glow', { opacity: 0, scale: 0.75, duration: 0.8, ease: 'sine.inOut' }, 6.85);
+  tl.from('#s2-eyebrow', { x: -50, opacity: 0, duration: 0.4, ease: 'expo.out' }, 6.9);
+  tl.from('#s2-title', { y: 70, opacity: 0, duration: 0.5, ease: 'expo.out' }, 7.0);
+  tl.from('#s2-divider', { scaleX: 0, transformOrigin: 'left center', duration: 0.35, ease: 'power4.out' }, 7.2);
+  tl.from('#s2-row1', { x: -40, opacity: 0, duration: 0.4, ease: 'power3.out' }, 7.3);
+  tl.from('#s2-row2', { x: -40, opacity: 0, duration: 0.4, ease: 'power3.out' }, 7.38);
+  tl.from('#s2-row3', { x: -40, opacity: 0, duration: 0.4, ease: 'power3.out' }, 7.46);
+  tl.from('#s2-accuracy-label', { opacity: 0, duration: 0.35, ease: 'power2.out' }, 8.5);
+  tl.from('#s2-accuracy-num', { y: 50, opacity: 0, duration: 0.35, ease: 'power4.out' }, 8.65);
+  tl.from('#s2-accuracy-sub', { opacity: 0, x: 20, duration: 0.4, ease: 'power2.out' }, 8.9);
+
+  // ── FLASH TRANSITION 2→3 at t=13.7 ──
+  tl.to('#flash-overlay', { opacity: 1, duration: 0.08, ease: 'power4.out' }, 13.7);
+  tl.to('#flash-overlay', { opacity: 0, duration: 0.12, ease: 'power4.in' }, 13.82);
+
+  // ════════════════════════════════════════════════
+  // SCENE 3 ENTRANCE (t=14.0)
+  // ════════════════════════════════════════════════
+  tl.from('#s3-glow', { opacity: 0, scale: 0.8, duration: 0.8, ease: 'sine.inOut' }, 14.05);
+  tl.from('#s3-eyebrow', { x: -50, opacity: 0, duration: 0.4, ease: 'expo.out' }, 14.1);
+  tl.from('#s3-headline', { y: 60, opacity: 0, duration: 0.5, ease: 'expo.out' }, 14.2);
+  tl.from('#s3-card-claude', { x: -80, opacity: 0, duration: 0.45, ease: 'power3.out' }, 14.4);
+  tl.from('#s3-card-figma', { x: 80, opacity: 0, duration: 0.45, ease: 'power3.out' }, 14.56);
+  tl.from('#s3-gap-label', { y: 40, opacity: 0, duration: 0.4, ease: 'power4.out' }, 14.72);
+
+  // ── FLASH TRANSITION 3→4 at t=20.2 ──
+  tl.to('#flash-overlay', { opacity: 1, duration: 0.08, ease: 'power4.out' }, 20.2);
+  tl.to('#flash-overlay', { opacity: 0, duration: 0.12, ease: 'power4.in' }, 20.32);
+
+  // ════════════════════════════════════════════════
+  // SCENE 4 ENTRANCE (t=20.5)
+  // ════════════════════════════════════════════════
+  tl.from('#s4-ghost', { x: -100, opacity: 0, duration: 0.7, ease: 'expo.out' }, 20.55);
+  tl.from('#s4-glow', { opacity: 0, scale: 0.75, duration: 0.85, ease: 'sine.inOut' }, 20.55);
+  tl.from('#s4-eyebrow', { x: -50, opacity: 0, duration: 0.4, ease: 'expo.out' }, 20.6);
+  tl.from('#s4-headline', { y: 80, opacity: 0, duration: 0.5, ease: 'expo.out' }, 20.72);
+  tl.from('#s4-rule', { scaleX: 0, transformOrigin: 'left center', duration: 0.35, ease: 'power4.out' }, 20.9);
+  tl.from('#s4-body', { opacity: 0, x: 30, duration: 0.45, ease: 'power2.out' }, 21.0);
+  tl.from('#s4-highlight', { y: 40, opacity: 0, duration: 0.4, ease: 'power4.out' }, 25.3);
+  tl.from('#s4-figma-note', { opacity: 0, duration: 0.4, ease: 'power2.out' }, 25.7);
+
+  // ── FLASH TRANSITION 4→5 at t=27.2 ──
+  tl.to('#flash-overlay', { opacity: 1, duration: 0.08, ease: 'power4.out' }, 27.2);
+  tl.to('#flash-overlay', { opacity: 0, duration: 0.12, ease: 'power4.in' }, 27.32);
+
+  // ════════════════════════════════════════════════
+  // SCENE 5 ENTRANCE (t=27.5)
+  // ════════════════════════════════════════════════
+  tl.from('#s5-ghost', { x: -100, opacity: 0, duration: 0.65, ease: 'expo.out' }, 27.55);
+  tl.from('#s5-glow', { opacity: 0, scale: 0.7, duration: 0.9, ease: 'sine.inOut' }, 27.55);
+  tl.from('#s5-eyebrow', { x: -50, opacity: 0, duration: 0.4, ease: 'expo.out' }, 27.6);
+  tl.from('#s5-headline', { y: 80, opacity: 0, duration: 0.5, ease: 'expo.out' }, 27.72);
+  tl.from('#s5-rule', { scaleX: 0, transformOrigin: 'left center', duration: 0.35, ease: 'power4.out' }, 27.9);
+  tl.from('#s5-body', { x: 40, opacity: 0, duration: 0.45, ease: 'power3.out' }, 28.05);
+  tl.from('#s5-coda', { y: 50, opacity: 0, duration: 0.4, ease: 'power4.out' }, 29.6);
+
+  // Final scene exit (scene 5 → IG overlay)
+  tl.to('#s5', { opacity: 0, duration: 0.3, ease: 'power3.in' }, 31.4);
+
+  // ════════════════════════════════════════════════
+  // INSTAGRAM OVERLAY ENTRANCE (t=31.7)
+  // ════════════════════════════════════════════════
+  tl.from('#ig-rule', { scaleX: 0, transformOrigin: 'left center', duration: 0.3, ease: 'power3.out' }, 31.7);
+  tl.from('#ig-handle', { y: 20, opacity: 0, duration: 0.45, ease: 'expo.out' }, 31.9);
+  tl.from('#ig-btn', { scale: 0.85, opacity: 0, duration: 0.4, ease: 'back.out(1.4)' }, 32.05);
+  tl.from('#ig-sub', { opacity: 0, duration: 0.35, ease: 'power2.out' }, 32.25);
+
+  // ════════════════════════════════════════════════
+  // CAPTIONS
+  // ════════════════════════════════════════════════
+  GROUPS.forEach(function (group, gi) {
+    var el = document.getElementById('cg-' + gi);
+    if (!el) return;
+
+    // Show group
+    tl.set(el, { visibility: 'visible', opacity: 0 }, group.start);
+    tl.to(el, { opacity: 1, duration: 0.1, ease: 'power2.out' }, group.start);
+
+    // Per-word active highlight
+    group.words.forEach(function (word, wi) {
+      var wordEl = document.getElementById('cg-' + gi + '-w' + wi);
+      var underlineEl = document.getElementById('cg-' + gi + '-u' + wi);
+      if (!wordEl || !underlineEl) return;
+
+      // Activate word color
+      tl.set(wordEl, { color: '#E8531A' }, word.start);
+      // Animate underline in
+      tl.fromTo(underlineEl,
+        { width: '0%' },
+        { width: '100%', duration: 0.06, ease: 'power2.out' },
+        word.start
+      );
+      // Deactivate word at its end (or when next word starts)
+      var deactivateAt = word.end;
+      tl.set(wordEl, { color: '#f0ede8' }, deactivateAt);
+      tl.set(underlineEl, { width: '0%' }, deactivateAt);
+    });
+
+    // Exit group
+    tl.to(el, { opacity: 0, duration: 0.12, ease: 'power2.in' }, group.end - 0.12);
+    tl.set(el, { opacity: 0, visibility: 'hidden' }, group.end);
+  });
+
+  // ── Caption lint (self-check) ──
+  GROUPS.forEach(function (group, gi) {
+    var el = document.getElementById('cg-' + gi);
+    if (!el) return;
+    tl.seek(group.end + 0.01);
+    var computed = window.getComputedStyle(el);
+    if (computed.opacity !== '0' && computed.visibility !== 'hidden') {
+      console.warn('[caption-lint] group ' + gi + ' still visible at t=' + (group.end + 0.01).toFixed(2) + 's');
+    }
+  });
+  tl.seek(0);
+
+  // ── Register timeline ──
+  window.__timelines = window.__timelines || {};
+  window.__timelines['main-comp'] = tl;
+
+})();
+</script>
+</body>
+</html>

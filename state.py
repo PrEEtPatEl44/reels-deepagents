@@ -11,6 +11,13 @@ class ResearchState(TypedDict, total=False):
     research_findings: str
     analysis: str
     report: str
-    slide_plan: list[dict]
-    caption: str
-    carousel_zip_path: str
+    # Video-pipeline outputs
+    script: str
+    title: str
+    slug: str
+    project_dir: str
+    audio_path: str
+    transcript: list[dict]
+    design_brief: str
+    html: str
+    video_path: str
