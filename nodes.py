@@ -17,12 +17,10 @@ from prompts import (
 from state import ResearchState
 from tools import RESEARCH_TOOLS
 from video import (
-    DesignOut,
-    HTMLOut,
     ScriptOut,
+    build_video_agent,
     copy_styles_snapshot,
     init_project,
-    load_skill_context,
     run_lint,
     run_render,
     run_transcribe,
@@ -105,28 +103,37 @@ async def writer_node(state: ResearchState) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Video pipeline
+# Video pipeline — deep agents with filesystem access to /skills/
 # ---------------------------------------------------------------------------
 
 
 async def scripter_node(state: ResearchState) -> dict:
-    log.info("scripter_node: drafting narration")
-    report = state.get("report", "")
-    topic = state.get("topic", "")
-    scripter = _llm(max_tokens=2048, temperature=0.6).with_structured_output(ScriptOut)
-    result: ScriptOut = await scripter.ainvoke(
-        [
-            SystemMessage(content=SCRIPTER_SYSTEM),
-            HumanMessage(
-                content=(
-                    f"Topic: {topic}\n\n"
-                    f"Report to condense into a 20-35 second narration:\n\n{report}"
-                )
-            ),
-        ]
+    log.info("scripter_node: drafting narration (deep agent)")
+    agent = build_video_agent(
+        system_prompt=SCRIPTER_SYSTEM,
+        response_format=ScriptOut,
     )
-    slug = slugify(result.slug or result.title or topic)
-    return {"script": result.script, "title": result.title, "slug": slug}
+    result = await agent.ainvoke(
+        {
+            "messages": [
+                HumanMessage(
+                    content=(
+                        f"Topic: {state.get('topic', '')}\n\n"
+                        f"Report to condense into a 20–35 second narration:\n\n"
+                        f"{state.get('report', '')}\n\n"
+                        "Return a ScriptOut with fields title, slug, script."
+                    )
+                )
+            ]
+        }
+    )
+    structured: ScriptOut = result["structured_response"]
+    slug = slugify(structured.slug or structured.title or state.get("topic", ""))
+    return {
+        "script": structured.script,
+        "title": structured.title,
+        "slug": slug,
+    }
 
 
 async def narrator_node(state: ResearchState) -> dict:
@@ -144,69 +151,111 @@ async def narrator_node(state: ResearchState) -> dict:
     }
 
 
+def _project_relpath(project_dir: Path) -> str:
+    """Path of the project dir relative to the repo root, with a leading slash
+    so it matches the virtual-mode FilesystemBackend's rules."""
+    from video import REPO_ROOT
+
+    rel = project_dir.resolve().relative_to(REPO_ROOT)
+    return "/" + str(rel).replace("\\", "/")
+
+
 async def designer_node(state: ResearchState) -> dict:
-    log.info("designer_node: authoring DESIGN.md")
+    log.info("designer_node: authoring DESIGN.md (deep agent)")
     project_dir = Path(state["project_dir"])
-    context = load_skill_context("designer")
-    system = DESIGNER_SYSTEM.replace("{HF_CONTEXT}", context)
-    designer = _llm(max_tokens=8192, temperature=0.7).with_structured_output(DesignOut)
-    result: DesignOut = await designer.ainvoke(
-        [
-            SystemMessage(content=system),
-            HumanMessage(
-                content=(
-                    f"Topic: {state.get('topic', '')}\n"
-                    f"Video title: {state.get('title', '')}\n\n"
-                    f"Narration script:\n{state.get('script', '')}\n\n"
-                    f"Source report (for tonal grounding):\n{state.get('report', '')}"
-                )
-            ),
-        ]
+    project_rel = _project_relpath(project_dir)
+    design_path_virtual = f"{project_rel}/DESIGN.md"
+
+    agent = build_video_agent(
+        system_prompt=DESIGNER_SYSTEM,
+        project_relpath=project_rel,
     )
-    design_path = project_dir / "DESIGN.md"
-    design_path.write_text(result.design_md, encoding="utf-8")
-    return {"design_brief": result.design_md}
+    await agent.ainvoke(
+        {
+            "messages": [
+                HumanMessage(
+                    content=(
+                        f"Topic: {state.get('topic', '')}\n"
+                        f"Video title: {state.get('title', '')}\n"
+                        f"Slug: {state.get('slug', '')}\n"
+                        f"Canvas: 1080x1920 portrait (9:16)\n\n"
+                        f"Narration script:\n{state.get('script', '')}\n\n"
+                        f"Source report (for tonal grounding):\n"
+                        f"{state.get('report', '')}\n\n"
+                        f"=== YOUR TASK ===\n"
+                        f"Browse the HyperFrames skill docs under /skills/ as needed, "
+                        f"then author the full DESIGN.md and write it to:\n"
+                        f"  {design_path_virtual}\n"
+                        f"Use your write_file tool. The file is the only deliverable."
+                    )
+                )
+            ]
+        }
+    )
+
+    design_file = project_dir / "DESIGN.md"
+    if not design_file.is_file():
+        raise RuntimeError(
+            f"designer did not write {design_file}. "
+            f"Check the agent trace for filesystem-tool errors."
+        )
+    design_md = design_file.read_text(encoding="utf-8")
+    return {"design_brief": design_md}
 
 
 async def builder_node(state: ResearchState) -> dict:
-    log.info("builder_node: authoring index.html")
+    log.info("builder_node: authoring index.html (deep agent)")
     project_dir = Path(state["project_dir"])
-    context = load_skill_context("builder")
-    system = BUILDER_SYSTEM.replace("{HF_CONTEXT}", context)
+    project_rel = _project_relpath(project_dir)
+    index_path_virtual = f"{project_rel}/index.html"
 
     audio_path = Path(state["audio_path"])
     audio_filename = audio_path.name
     words = state.get("transcript", [])
-    # Narration duration drives composition duration; add 3s tail for the
-    # Instagram follow overlay per the prompt contract.
     spoken_end = max((w.get("end", 0.0) for w in words), default=0.0)
     total_duration = max(spoken_end + 3.0, 6.0)
 
-    builder = _llm(max_tokens=16000, temperature=0.5).with_structured_output(HTMLOut)
-    result: HTMLOut = await builder.ainvoke(
-        [
-            SystemMessage(content=system),
-            HumanMessage(
-                content=(
-                    f"Topic: {state.get('topic', '')}\n"
-                    f"Video title: {state.get('title', '')}\n"
-                    f"Canvas: 1080x1920 portrait (9:16)\n"
-                    f"Audio filename (in project root): {audio_filename}\n"
-                    f"Narration spoken length: {spoken_end:.2f}s\n"
-                    f"Target composition duration: {total_duration:.2f}s "
-                    f"(narration + {total_duration - spoken_end:.2f}s Instagram follow overlay)\n\n"
-                    f"=== DESIGN.md (authoritative visual direction) ===\n"
-                    f"{state.get('design_brief', '')}\n\n"
-                    f"=== Narration script ===\n{state.get('script', '')}\n\n"
-                    f"=== Word-level transcript (JSON, seconds) ===\n"
-                    f"{json.dumps(words, indent=2)}"
-                )
-            ),
-        ]
+    agent = build_video_agent(
+        system_prompt=BUILDER_SYSTEM,
+        project_relpath=project_rel,
     )
-    index_path = project_dir / "index.html"
-    index_path.write_text(result.html, encoding="utf-8")
-    return {"html": result.html}
+    await agent.ainvoke(
+        {
+            "messages": [
+                HumanMessage(
+                    content=(
+                        f"Topic: {state.get('topic', '')}\n"
+                        f"Video title: {state.get('title', '')}\n"
+                        f"Canvas: 1080x1920 portrait (9:16)\n"
+                        f"Audio filename (in project root): {audio_filename}\n"
+                        f"Narration spoken length: {spoken_end:.2f}s\n"
+                        f"Target composition duration: {total_duration:.2f}s "
+                        f"(narration + {total_duration - spoken_end:.2f}s "
+                        f"Instagram follow overlay)\n\n"
+                        f"=== DESIGN.md (authoritative visual direction) ===\n"
+                        f"{state.get('design_brief', '')}\n\n"
+                        f"=== Narration script ===\n{state.get('script', '')}\n\n"
+                        f"=== Word-level transcript (JSON, seconds) ===\n"
+                        f"{json.dumps(words, indent=2)}\n\n"
+                        f"=== YOUR TASK ===\n"
+                        f"Browse the HyperFrames skill docs under /skills/ as needed, "
+                        f"then author the full index.html and write it to:\n"
+                        f"  {index_path_virtual}\n"
+                        f"Use your write_file tool. The file is the only deliverable."
+                    )
+                )
+            ]
+        }
+    )
+
+    index_file = project_dir / "index.html"
+    if not index_file.is_file():
+        raise RuntimeError(
+            f"builder did not write {index_file}. "
+            f"Check the agent trace for filesystem-tool errors."
+        )
+    html = index_file.read_text(encoding="utf-8")
+    return {"html": html}
 
 
 async def renderer_node(state: ResearchState) -> dict:

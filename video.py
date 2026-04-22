@@ -1,9 +1,11 @@
 """Helpers for the HyperFrames video pipeline.
 
-Pure Python glue — no HyperFrames rules, no styling. Agents read the skill
-markdown via `load_skill_context` and inject it into their own prompts; this
-module only wires subprocess calls to `npx hyperframes {init,tts,transcribe,
-lint,render}` and provides the Pydantic shapes the LLM nodes use.
+Pure Python glue — no HyperFrames rules, no styling. The video-generation
+agents are LangChain deep agents created here; they get read-only filesystem
+access to the full `skills/` tree (so any skill file is reachable on demand,
+not a pre-selected bundle) and read/write access scoped to their per-run
+project directory. This module also wraps the `npx hyperframes` subprocesses
+and provides the Pydantic shapes the scripter returns.
 """
 
 from __future__ import annotations
@@ -14,9 +16,11 @@ import logging
 import re
 import shutil
 import unicodedata
-from functools import lru_cache
 from pathlib import Path
+from typing import Any
 
+from deepagents import FilesystemPermission, create_deep_agent
+from deepagents.backends import FilesystemBackend
 from pydantic import BaseModel, Field
 
 log = logging.getLogger(__name__)
@@ -26,50 +30,7 @@ SKILLS_ROOT = REPO_ROOT / "skills"
 VIDEOS_ROOT = REPO_ROOT / "outputs" / "videos"
 STYLES_ROOT = REPO_ROOT / "styles"
 
-
-# ---------------------------------------------------------------------------
-# Skill context bundles
-# ---------------------------------------------------------------------------
-
-# Logical agent → list of skill files (paths relative to `skills/`).
-# The files are read verbatim and concatenated into a single markdown blob
-# that gets substituted into the `{HF_CONTEXT}` placeholder in a prompt.
-SKILL_BUNDLES: dict[str, list[str]] = {
-    "designer": [
-        "hyperframes/SKILL.md",
-        "hyperframes/visual-styles.md",
-        "hyperframes/house-style.md",
-        "hyperframes-registry/SKILL.md",
-    ],
-    "builder": [
-        "hyperframes/SKILL.md",
-        "hyperframes/references/captions.md",
-        "hyperframes/references/transitions.md",
-        "hyperframes/references/motion-principles.md",
-        "gsap/SKILL.md",
-        "hyperframes-registry/SKILL.md",
-    ],
-}
-
-
-@lru_cache(maxsize=None)
-def load_skill_context(bundle: str) -> str:
-    """Read the skill files for a named bundle and concatenate them.
-
-    Missing files are logged and skipped — the rest of the bundle still loads.
-    """
-    paths = SKILL_BUNDLES.get(bundle)
-    if not paths:
-        raise ValueError(f"unknown skill bundle: {bundle!r}")
-    chunks: list[str] = []
-    for rel in paths:
-        full = SKILLS_ROOT / rel
-        if not full.is_file():
-            log.warning("skill file missing: %s", full)
-            continue
-        text = full.read_text(encoding="utf-8")
-        chunks.append(f"\n\n---\n# skills/{rel}\n\n{text}")
-    return "".join(chunks).strip()
+DEEP_AGENT_MODEL = "claude-sonnet-4-6"
 
 
 # ---------------------------------------------------------------------------
@@ -81,17 +42,6 @@ class ScriptOut(BaseModel):
     title: str = Field(..., description="Punchy 3–6 word video title.")
     slug: str = Field(..., description="Filesystem-safe, lowercase-hyphenated slug.")
     script: str = Field(..., description="Narration text, 20–35 seconds when spoken.")
-
-
-class DesignOut(BaseModel):
-    design_md: str = Field(
-        ...,
-        description="Full DESIGN.md content following the Visual Identity Gate.",
-    )
-
-
-class HTMLOut(BaseModel):
-    html: str = Field(..., description="Complete HyperFrames index.html document.")
 
 
 # ---------------------------------------------------------------------------
@@ -110,6 +60,74 @@ def slugify(text: str) -> str:
 
 def project_path(slug: str) -> Path:
     return VIDEOS_ROOT / slug
+
+
+# ---------------------------------------------------------------------------
+# Deep agents for video generation
+# ---------------------------------------------------------------------------
+
+
+_SKILLS_READ_PATHS = [
+    # The repo exposes skills/ as symlinks to .agents/skills/; agents may use
+    # either path since FilesystemBackend canonicalizes through symlinks.
+    "/skills/**",
+    "/.agents/skills/**",
+]
+
+
+def _repo_backend() -> FilesystemBackend:
+    """Virtual filesystem rooted at the repo. Symlinks under `skills/` resolve
+    into `.agents/skills/` which still lies inside the repo, so the whole
+    HyperFrames documentation tree is reachable."""
+    return FilesystemBackend(root_dir=str(REPO_ROOT), virtual_mode=True)
+
+
+def _permissions_for(project_relpath: str) -> list[FilesystemPermission]:
+    """Permission stack for a video-gen agent.
+
+    Rules apply first-match-wins. Agent may:
+      - read + write inside its own per-run project dir
+      - read anything under /skills/ (and its canonical /.agents/skills/)
+      - NOT write anywhere else
+    """
+    project_glob = f"{project_relpath.rstrip('/')}/**"
+    return [
+        FilesystemPermission(operations=["read", "write"], paths=[project_glob]),
+        FilesystemPermission(operations=["read"], paths=_SKILLS_READ_PATHS),
+        FilesystemPermission(operations=["write"], paths=["/**"], mode="deny"),
+    ]
+
+
+def build_video_agent(
+    *,
+    system_prompt: str,
+    project_relpath: str | None = None,
+    response_format: type[BaseModel] | None = None,
+) -> Any:
+    """Create a deep agent pre-wired with filesystem access appropriate for
+    the video pipeline.
+
+    Args:
+      system_prompt: the role-specific prompt; the agent also inherits the
+        built-in deep-agent system prompt (planning + filesystem tool usage).
+      project_relpath: e.g. "/outputs/videos/<slug>" — grants read+write on
+        that subtree. Omit for read-only agents (like the scripter).
+      response_format: optional Pydantic model for structured responses.
+    """
+    if project_relpath:
+        perms = _permissions_for(project_relpath)
+    else:
+        perms = [
+            FilesystemPermission(operations=["read"], paths=_SKILLS_READ_PATHS),
+            FilesystemPermission(operations=["write"], paths=["/**"], mode="deny"),
+        ]
+    return create_deep_agent(
+        model=DEEP_AGENT_MODEL,
+        system_prompt=system_prompt,
+        backend=_repo_backend(),
+        permissions=perms,
+        response_format=response_format,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -164,7 +182,6 @@ async def init_project(slug: str) -> Path:
     if target.exists():
         shutil.rmtree(target)
 
-    # `init` always creates the named directory under cwd.
     await _run(
         "npx",
         "hyperframes",
@@ -239,7 +256,7 @@ async def run_lint(project_dir: Path) -> dict | None:
     Does not raise on warnings. Callers that want to fail on errors should
     check the return value.
     """
-    rc, stdout, stderr = await _run(
+    _, stdout, stderr = await _run(
         "npx",
         "hyperframes",
         "lint",
@@ -269,8 +286,6 @@ async def run_render(project_dir: Path, quality: str = "standard") -> Path:
         quality,
         cwd=project_dir,
     )
-    # The CLI logs the output path; if we can't parse it, fall back to the
-    # newest file in renders/.
     match = re.search(r"([^\s]+\.mp4)\b", stdout)
     if match:
         candidate = Path(match.group(1))

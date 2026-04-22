@@ -33,18 +33,20 @@ Shared state is `ResearchState` (`state.py`), a `TypedDict` that accumulates `to
 
 Key design choices that aren't obvious from one file:
 
-- **`nodes.py` is the only place LLMs are created.** `_llm()` builds `ChatAnthropic` with `MODEL = "claude-sonnet-4-6"` — change this one constant to swap models globally. Per-call `max_tokens`/`temperature` are passed at the call site.
+- **Hybrid agent architecture.** Research nodes (`searcher`, `analyst`, `writer`) use plain `ChatAnthropic` / `create_react_agent`. Video-generation nodes (`scripter`, `designer`, `builder`) are **LangChain deep agents** (`deepagents.create_deep_agent`). Narrator + renderer are pure subprocess calls with no LLM.
+- **`nodes.py` is the only place LLMs are created.** `_llm()` builds `ChatAnthropic` with `MODEL = "claude-sonnet-4-6"`; the deep agents use the same model via `video.DEEP_AGENT_MODEL`. Change those two constants to swap models globally.
 - **`searcher_node` uses a cached ReAct agent** (`_searcher` module-level singleton) wired to two tools from `tools.py`. The agent, not Python, decides which URLs to scrape.
 - **`tools.py` keeps a single `AsyncWebCrawler` alive** as `_crawler` behind an `asyncio.Lock` to avoid paying Playwright browser-spin-up cost per scrape. Scrape output is truncated to `MAX_SCRAPE_CHARS = 8000`.
-- **No HyperFrames rules, colors, fonts, or HTML live in Python.** The `designer_node` and `builder_node` read skill markdown from `skills/` via `video.load_skill_context(bundle)` (LRU-cached) and substitute it into their system prompts at the `{HF_CONTEXT}` placeholder. Every visual decision is made by the LLM agents, not hardcoded.
-- **Skill bundles are defined in `video.py::SKILL_BUNDLES`.** `designer` gets `hyperframes/SKILL.md + visual-styles.md + house-style.md + hyperframes-registry/SKILL.md`. `builder` gets `hyperframes/SKILL.md + references/{captions,transitions,motion-principles}.md + gsap/SKILL.md + hyperframes-registry/SKILL.md`.
+- **No HyperFrames rules, colors, fonts, or HTML live in Python.** The three video-gen agents get a `FilesystemBackend(root_dir=REPO_ROOT, virtual_mode=True)` and can `ls`/`read_file`/`glob`/`grep` the full `skills/` tree on demand. There is no pre-selected skill-file bundle — the agent decides what to read based on its task. All visual decisions are made by the agents, not hardcoded.
+- **Permissions are scoped per run.** `video.build_video_agent(project_relpath=...)` grants read+write only on the project's own subtree, read on `/skills/**` and `/.agents/skills/**` (the repo uses symlinks), and denies all other writes. The scripter runs read-only with no project subtree.
+- **Scripter returns structured output** (`ScriptOut` via `response_format`). Designer and builder write their artifacts directly to disk via the deep agent's `write_file` tool; Python reads the real files back from `project_dir` after each node returns.
 - **`narrator_node` scaffolds a fresh per-run project** at `outputs/videos/<slug>/` via `npx hyperframes init --non-interactive --skip-skills --skip-transcribe`, then runs `hyperframes tts` and `hyperframes transcribe` as subprocesses. If the slug directory already exists it's wiped first so re-runs start clean.
 - **`renderer_node` copies the final `DESIGN.md` and `index.html` into `styles/<slug>/`** via `copy_styles_snapshot` so the generated style guides survive past the render as reference material.
 - **Builder contract enforces two invariants via prompt**, not code: (1) word-synced captions rendered from the transcript, (2) an Instagram follow overlay in the final 2–3 s. The `builder_node` passes the full word-level transcript JSON into the user message, and computes `total_duration = spoken_end + 3` so the composition has room for the overlay.
 
 ## Two things to know before editing
 
-- **To change visual/motion behavior**, edit `prompts.py::DESIGNER_SYSTEM` / `BUILDER_SYSTEM` and the skill bundles in `video.py::SKILL_BUNDLES` — do NOT hardcode colors, fonts, or HTML. If you need a new HyperFrames reference available to an agent, add its path to the relevant bundle and bump the `lru_cache` by restarting the process.
+- **To change visual/motion behavior**, edit `prompts.py::DESIGNER_SYSTEM` / `BUILDER_SYSTEM`. Agents discover their own reference files by browsing `/skills/` — no allowlist to maintain. Don't hardcode colors, fonts, or HTML anywhere.
 - **`main.py` lazy-imports `nodes` inside `run_video_only`** so `--report-file` mode doesn't pull in crawl4ai/Playwright at parse time. Preserve that if you touch the CLI path.
 
 ## Gotchas
