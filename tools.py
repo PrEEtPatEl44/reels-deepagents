@@ -17,6 +17,8 @@ from typing import Any
 
 from langchain_core.tools import tool
 
+import events
+
 log = logging.getLogger(__name__)
 
 # Cap single-page scrape output to keep the agent's context manageable.
@@ -76,9 +78,16 @@ async def web_search(query: str, max_results: int = 6) -> list[dict[str, Any]]:
                 for r in ddgs.text(query, max_results=n)
             ]
 
+    events.emit("tool_call", stage="searcher", tool="web_search", args={"query": query, "n": n})
     # ddgs is sync; run in a worker thread so we don't block the event loop.
     results = await asyncio.to_thread(_search)
     log.info("web_search %r -> %d results", query, len(results))
+    events.emit(
+        "tool_result",
+        stage="searcher",
+        tool="web_search",
+        result=f"{len(results)} results",
+    )
     return results
 
 
@@ -95,14 +104,22 @@ async def scrape_url(url: str) -> dict[str, Any]:
         keep the agent context manageable. If scraping fails, returns
         {"url", "error"}.
     """
+    events.emit("tool_call", stage="searcher", tool="scrape_url", args={"url": url})
     try:
         crawler = await _get_crawler()
         result = await crawler.arun(url=url)
     except Exception as e:  # noqa: BLE001
         log.exception("scrape_url failed for %s", url)
+        events.emit("tool_error", stage="searcher", tool="scrape_url", error=str(e))
         return {"url": url, "error": f"{type(e).__name__}: {e}"}
 
     if not getattr(result, "success", False):
+        events.emit(
+            "tool_error",
+            stage="searcher",
+            tool="scrape_url",
+            error=getattr(result, "error_message", "unknown"),
+        )
         return {"url": url, "error": getattr(result, "error_message", "unknown scrape failure")}
 
     md = getattr(result, "markdown", "") or ""
@@ -113,6 +130,12 @@ async def scrape_url(url: str) -> dict[str, Any]:
     truncated = md[:MAX_SCRAPE_CHARS]
     title = (getattr(result, "metadata", {}) or {}).get("title") or ""
 
+    events.emit(
+        "tool_result",
+        stage="searcher",
+        tool="scrape_url",
+        result=f"{len(truncated)} chars from {url}",
+    )
     return {
         "url": url,
         "title": title,

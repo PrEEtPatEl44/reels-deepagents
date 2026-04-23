@@ -23,6 +23,8 @@ from deepagents import FilesystemPermission, create_deep_agent
 from deepagents.backends import FilesystemBackend
 from pydantic import BaseModel, Field
 
+import events
+
 log = logging.getLogger(__name__)
 
 REPO_ROOT = Path(__file__).resolve().parent
@@ -139,19 +141,46 @@ async def _run(
     *args: str,
     cwd: Path | None = None,
     check: bool = True,
+    stage: str | None = None,
 ) -> tuple[int, str, str]:
     """Run a command, return (returncode, stdout, stderr). Raise on non-zero
-    when `check=True`."""
+    when `check=True`. If `stage` is set, stream each stdout/stderr line to
+    the event bus as a `subprocess_line` event so the UI can display it live."""
     log.info("run: %s (cwd=%s)", " ".join(args), cwd)
+    if stage:
+        events.emit("subprocess_line", stage=stage, stream="cmd", line=" ".join(args))
     proc = await asyncio.create_subprocess_exec(
         *args,
         cwd=str(cwd) if cwd else None,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
-    stdout_b, stderr_b = await proc.communicate()
-    stdout = stdout_b.decode(errors="replace")
-    stderr = stderr_b.decode(errors="replace")
+
+    if not stage:
+        stdout_b, stderr_b = await proc.communicate()
+        stdout = stdout_b.decode(errors="replace")
+        stderr = stderr_b.decode(errors="replace")
+    else:
+        stdout_lines: list[str] = []
+        stderr_lines: list[str] = []
+
+        async def _pump(reader, stream_name: str, sink: list[str]) -> None:
+            while True:
+                line_b = await reader.readline()
+                if not line_b:
+                    break
+                line = line_b.decode(errors="replace").rstrip("\n")
+                sink.append(line)
+                events.emit("subprocess_line", stage=stage, stream=stream_name, line=line)
+
+        await asyncio.gather(
+            _pump(proc.stdout, "stdout", stdout_lines),
+            _pump(proc.stderr, "stderr", stderr_lines),
+        )
+        await proc.wait()
+        stdout = "\n".join(stdout_lines)
+        stderr = "\n".join(stderr_lines)
+
     if check and proc.returncode != 0:
         raise RuntimeError(
             f"command failed ({proc.returncode}): {' '.join(args)}\n"
@@ -172,7 +201,7 @@ def _parse_json_line(stdout: str) -> dict | None:
     return None
 
 
-async def init_project(slug: str) -> Path:
+async def init_project(slug: str, stage: str | None = None) -> Path:
     """Scaffold a per-run HyperFrames project at outputs/videos/<slug>.
 
     If the directory already exists, it's wiped first so re-runs start clean.
@@ -191,6 +220,7 @@ async def init_project(slug: str) -> Path:
         "--skip-skills",
         "--skip-transcribe",
         cwd=VIDEOS_ROOT,
+        stage=stage,
     )
     if not target.is_dir():
         raise RuntimeError(f"hyperframes init did not produce {target}")
@@ -199,7 +229,7 @@ async def init_project(slug: str) -> Path:
 
 
 async def run_tts(
-    project_dir: Path, script_text: str, voice: str = "af_nova"
+    project_dir: Path, script_text: str, voice: str = "af_nova", stage: str | None = None
 ) -> Path:
     """Write `script.txt` and generate `narration.wav` via `hyperframes tts`."""
     script_path = project_dir / "script.txt"
@@ -216,6 +246,7 @@ async def run_tts(
         str(audio_path),
         "--json",
         cwd=project_dir,
+        stage=stage,
     )
     payload = _parse_json_line(stdout) or {}
     out = payload.get("outputPath")
@@ -227,7 +258,7 @@ async def run_tts(
 
 
 async def run_transcribe(
-    project_dir: Path, audio_path: Path, model: str = "medium.en"
+    project_dir: Path, audio_path: Path, model: str = "medium.en", stage: str | None = None
 ) -> tuple[Path, list[dict]]:
     """Transcribe `audio_path` to word-level JSON and return (path, words)."""
     _, stdout, _ = await _run(
@@ -239,6 +270,7 @@ async def run_transcribe(
         model,
         "--json",
         cwd=project_dir,
+        stage=stage,
     )
     payload = _parse_json_line(stdout) or {}
     transcript_path = Path(payload.get("transcriptPath") or project_dir / "transcript.json")
@@ -250,7 +282,7 @@ async def run_transcribe(
     return transcript_path, words
 
 
-async def run_lint(project_dir: Path) -> dict | None:
+async def run_lint(project_dir: Path, stage: str | None = None) -> dict | None:
     """Run `hyperframes lint --json` and return the parsed findings.
 
     Does not raise on warnings. Callers that want to fail on errors should
@@ -263,6 +295,7 @@ async def run_lint(project_dir: Path) -> dict | None:
         "--json",
         cwd=project_dir,
         check=False,
+        stage=stage,
     )
     payload = _parse_json_line(stdout)
     if payload is None and stderr:
@@ -276,7 +309,7 @@ async def run_lint(project_dir: Path) -> dict | None:
     return payload
 
 
-async def run_render(project_dir: Path, quality: str = "standard") -> Path:
+async def run_render(project_dir: Path, quality: str = "standard", stage: str | None = None) -> Path:
     """Render the composition to MP4. Returns the output path."""
     _, stdout, _ = await _run(
         "npx",
@@ -285,6 +318,7 @@ async def run_render(project_dir: Path, quality: str = "standard") -> Path:
         "--quality",
         quality,
         cwd=project_dir,
+        stage=stage,
     )
     match = re.search(r"([^\s]+\.mp4)\b", stdout)
     if match:

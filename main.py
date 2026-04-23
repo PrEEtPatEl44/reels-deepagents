@@ -6,21 +6,28 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+import events
 from graph import build_graph
 
 
 def _setup_logging(verbose: bool) -> None:
-    logging.basicConfig(
-        level=logging.INFO if verbose else logging.WARNING,
-        format="%(asctime)s %(name)s %(levelname)s %(message)s",
-    )
+    root = logging.getLogger()
+    root.setLevel(logging.INFO if verbose else logging.WARNING)
+    fmt = logging.Formatter("%(asctime)s %(name)s %(levelname)s %(message)s")
+    stream = logging.StreamHandler()
+    stream.setFormatter(fmt)
+    root.addHandler(stream)
+    # Always attach the event-bus handler, regardless of verbose.
+    # It honors its own level; INFO is reasonable.
+    bridge = events.EventLogHandler()
+    bridge.setLevel(logging.INFO)
+    root.addHandler(bridge)
 
 
 async def run_full(topic: str) -> dict:
     """Full pipeline: searcher → analyst → writer → scripter → narrator → designer → builder → renderer."""
     graph = build_graph()
 
-    # Stream messages from the writer node only so the user sees the report live.
     final_state: dict = {}
     print("\n=== REPORT ===\n", flush=True)
     async for event in graph.astream(
@@ -46,7 +53,6 @@ async def run_full(topic: str) -> dict:
 
 async def run_video_only(topic: str, report: str) -> dict:
     """Skip research — run only the video-generation tail against a given report."""
-    # Import lazily so this path doesn't pull in searcher/crawl4ai deps at parse time.
     from nodes import (
         builder_node,
         designer_node,
@@ -54,6 +60,11 @@ async def run_video_only(topic: str, report: str) -> dict:
         renderer_node,
         scripter_node,
     )
+
+    # Mark upstream research stages as skipped so the UI strip fills in.
+    for skipped in ("searcher", "analyst", "writer"):
+        events.emit("stage_start", stage=skipped)
+        events.emit("stage_end", stage=skipped, status="skipped")
 
     state: dict = {"topic": topic, "report": report}
     for node in (scripter_node, narrator_node, designer_node, builder_node, renderer_node):
@@ -91,18 +102,37 @@ def main() -> int:
 
     topic = " ".join(args.topic)
 
-    if args.report_file or args.report:
-        if args.report_file:
-            if not args.report_file.exists():
-                print(f"error: report file not found: {args.report_file}", file=sys.stderr)
-                return 2
-            report = args.report_file.read_text(encoding="utf-8")
+    mode = "video-only" if (args.report_file or args.report) else "full"
+    run_id = events.start_run(topic=topic, mode=mode)
+    print(
+        f"[observability] run {run_id} — live UI: http://127.0.0.1:8000/  "
+        f"(start server with: python server.py)",
+        flush=True,
+    )
+
+    status = "ok"
+    err: str | None = None
+    try:
+        if args.report_file or args.report:
+            if args.report_file:
+                if not args.report_file.exists():
+                    print(f"error: report file not found: {args.report_file}", file=sys.stderr)
+                    events.end_run(status="error", error="report file not found")
+                    return 2
+                report = args.report_file.read_text(encoding="utf-8")
+            else:
+                report = args.report
+            print(f"[video-only mode] using report of {len(report)} chars; topic={topic!r}")
+            final = asyncio.run(run_video_only(topic, report))
         else:
-            report = args.report
-        print(f"[video-only mode] using report of {len(report)} chars; topic={topic!r}")
-        final = asyncio.run(run_video_only(topic, report))
+            final = asyncio.run(run_full(topic))
+    except BaseException as e:  # Ctrl-C or otherwise
+        status = "error"
+        err = f"{type(e).__name__}: {e}"
+        events.end_run(status=status, error=err)
+        raise
     else:
-        final = asyncio.run(run_full(topic))
+        events.end_run(status=status)
 
     video_path = final.get("video_path")
     if video_path:
