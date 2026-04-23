@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HyperFrames Pipeline Observer</title>
+  <link rel="stylesheet" href="/ui/style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/atom-one-dark.min.css" />
+  <script defer src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">HyperFrames <span>· pipeline observer</span></div>
+    <div class="runmeta">
+      <span class="label">run</span>
+      <span id="run-id">—</span>
+      <span class="label">topic</span>
+      <span id="run-topic">—</span>
+      <span class="label">elapsed</span>
+      <span id="run-elapsed">0s</span>
+      <span id="run-status" class="badge pending">waiting</span>
+    </div>
+  </header>
+
+  <section id="stages" class="stages"></section>
+
+  <main class="main">
+    <section class="artifacts">
+      <div id="artifact-tabs" class="tabs"></div>
+      <div id="artifact-content" class="content">
+        <p class="placeholder">select a completed stage artifact on the left to view its file contents.</p>
+      </div>
+    </section>
+
+    <section class="logpanel">
+      <div class="logheader">
+        <span>live log</span>
+        <label class="tiny"><input type="checkbox" id="follow" checked /> follow</label>
+      </div>
+      <div id="log" class="log"></div>
+    </section>
+  </main>
+
+  <script src="/ui/app.js"></script>
+</body>
+</html>

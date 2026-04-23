@@ -79,6 +79,27 @@ python main.py "topic" --report-file ./sample_report.md
 
 ---
 
+## Live observability UI
+
+A small FastAPI dashboard tails each run and shows every stage, tool call, and
+subprocess line in real time — plus the artifact each stage produces as source
+(report.md, script.txt, DESIGN.md, index.html, transcript.json, final mp4).
+
+```bash
+# Terminal A — start the observer (once)
+python server.py
+# open http://127.0.0.1:8000/
+
+# Terminal B — run the pipeline as normal
+python main.py "your topic"
+```
+
+The UI auto-switches to the newest run. Events land in `outputs/events/<run_id>.jsonl`;
+the CLI writes them even if no server is listening, so historical runs can be replayed
+by selecting them from the server's listing.
+
+---
+
 ## Project layout
 
 ```
@@ -90,8 +111,11 @@ agents/
 ├── prompts.py       # System prompts for every node
 ├── tools.py         # Web search and scraping tools
 ├── video.py         # HyperFrames CLI wrappers and Deep Agent setup
+├── events.py        # Observability event bus (per-run JSONL)
+├── server.py        # FastAPI observer + SSE stream for the UI
+├── ui/              # Static dashboard (index.html, app.js, style.css)
 ├── skills/          # Documentation and patterns for the agents (symlinked)
-└── outputs/         # Generated videos and intermediate artifacts
+└── outputs/         # Generated videos, events/<run>.jsonl, and artifacts
 ```
 
 ---
