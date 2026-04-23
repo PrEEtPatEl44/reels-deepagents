@@ -117,9 +117,24 @@ Platform safe-area (TikTok + Instagram Reels, 1080×1920):
 The video plays inside the TikTok/Reels UI, which covers parts of the frame with the
 caption, username, like/comment/share buttons, and progress bar. DESIGN.md MUST define
 a safe-area layout so no headline, caption, stat, logo, or key visual lands under the
-platform chrome. 
+platform chrome.
 
-Make sure the captions or subtitles of the narration have appropriate spacing
+Concretely, assume the platform danger zones are:
+- Top ~220 px: platform chrome / back button / camera notch.
+- Bottom ~520 px: username, caption, music label, like/comment/share stack, progress bar.
+- Right ~180 px (full height): the vertical action button stack.
+This leaves a safe rectangle roughly from y≈240 to y≈1400, x≈60 to x≈900. All primary
+content must live inside that rectangle. Define it explicitly in DESIGN.md as a named
+zone (e.g. `--safe-top`, `--safe-bottom`, `--safe-left`, `--safe-right`) so the builder
+has concrete numbers to work from.
+
+Center-of-frame composition rule (critical):
+The Layour should be balanced and centered horizontally and vertically as well
+Having a single component is acceptable but single or multiple components should follow the same margins and paddings
+that is they should be centered and centered equally 
+
+Make sure the captions or subtitles of the narration have appropriate spacing and sit
+in the caption band defined above — never in the center third of the frame.
 
 /skills/hyperframes-registry/   blocks and components of hyperframs are available through here
 try to use these base components as much as possible  but also do not overuse it if visual harmony cannot be maintained through it use custom creations
@@ -162,6 +177,33 @@ Workflow:
    `/skills/hyperframes/references/typography.md`, and registry files if to
    use blocks/components (preferred). Read more files if the composition calls for them.
 3. Author the full index.html and write it to the path the host specifies.
+
+Layout contract (enforce in the HTML/CSS — not optional):
+- Treat the frame as 1080×1920 and honor the platform danger zones: top ~220 px, bottom
+  ~520 px, right ~180 px are under TikTok / Instagram Reels chrome and must be empty of
+  primary content. The safe rectangle is approximately x: 60–900, y: 240–1400. Use the
+  zone variables DESIGN.md defines (or define them yourself if DESIGN.md does not:
+  `--safe-top: 240px; --safe-bottom: 520px; --safe-left: 60px; --safe-right: 180px;`).
+- Every scene has ONE hero element (the main word, stat, headline, product visual,
+  diagram, or chart for that moment). The hero's geometric center MUST sit within ±120
+  px of y≈820 — the vertical center of the safe rectangle. Use flex centering, absolute
+  positioning with `top: 50%; transform: translateY(-50%)`, or a CSS grid with the hero
+  explicitly placed in the middle row. Do not rely on margin-top guesses.
+- NEVER leave a large empty band running through the middle of the frame. If the beat
+  has sparse content, EITHER scale the hero up (bigger type, bigger visual) OR add a
+  supporting element to fill the middle — a soft radial glow behind the hero, an
+  oversized background numeral/letter/icon at low opacity, an underline/keyline flourish,
+  a subtle grid/pattern, a background gradient blob. The rule: the center third of the
+  frame (y≈640 to y≈1000) must always be visually occupied by the hero or its
+  supporting visual motif, never by blank background.
+- Captions/subtitles are NEVER the hero. Render the word-synced captions in a dedicated
+  band near the bottom of the safe rectangle (e.g. y≈1200–1360), with clear padding
+  from the hero above and from the platform chrome below. Captions must not drift into
+  the center third of the frame.
+- The Instagram follow overlay in the final 2–3 s must also respect the safe rectangle
+  and be centered on the y≈820 anchor, not pinned to a corner.
+- If you stack multiple elements (title + stat + label), balance them vertically and horizontally AROUND
+  the center anchor so the visual mass is centered, not top-heavy or bottom-heavy.
 
 When finished, the generated `index.html` is the sole deliverable. The conversational
 response is optional.

@@ -32,7 +32,7 @@ SKILLS_ROOT = REPO_ROOT / "skills"
 VIDEOS_ROOT = REPO_ROOT / "outputs" / "videos"
 STYLES_ROOT = REPO_ROOT / "styles"
 
-DEEP_AGENT_MODEL = "claude-sonnet-4-6"
+DEEP_AGENT_MODEL = "claude-opus-4-7"
 
 
 # ---------------------------------------------------------------------------
