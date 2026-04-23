@@ -227,7 +227,7 @@ async def run_tts(
 
 
 async def run_transcribe(
-    project_dir: Path, audio_path: Path, model: str = "small.en"
+    project_dir: Path, audio_path: Path, model: str = "medium.en"
 ) -> tuple[Path, list[dict]]:
     """Transcribe `audio_path` to word-level JSON and return (path, words)."""
     _, stdout, _ = await _run(
