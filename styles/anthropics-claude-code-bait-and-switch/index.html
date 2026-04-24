@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    width: 1080px;
+    height: 1920px;
+    overflow: hidden;
+    background: #0B0E11;
+    font-family: "Space Grotesk", sans-serif;
+  }
+
+  .scene {
+    position: absolute;
+    top: 0; left: 0;
+    width: 1080px; height: 1920px;
+    overflow: hidden;
+    background: #0B0E11;
+  }
+
+  /* Scene 1 visible by default; rest hidden */
+  #scene1 { z-index: 1; }
+  #scene2 { z-index: 2; opacity: 0; }
+  #scene3 { z-index: 3; opacity: 0; }
+  #scene4 { z-index: 4; opacity: 0; }
+  #scene5 { z-index: 5; opacity: 0; }
+  #scene6 { z-index: 6; opacity: 0; }
+  #scene7 { z-index: 7; opacity: 0; }
+  #scene8 { z-index: 8; opacity: 0; }
+
+  /* ── Safe-area content wrapper ── */
+  .scene-content {
+    position: absolute;
+    top: 240px; left: 60px;
+    width: 840px; height: 1160px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+
+  /* ── Vignette ── */
+  .vignette {
+    position: absolute;
+    top: 0; left: 0;
+    width: 1080px; height: 1920px;
+    background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.4) 100%);
+    pointer-events: none;
+    z-index: 50;
+  }
+
+  /* ── Grain ── */
+  .grain-texture {
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 256px 256px;
+    opacity: 0.04;
+    pointer-events: none;
+    animation: grainShift 0.8s steps(4) infinite;
+  }
+  @keyframes grainShift {
+    0%   { transform: translate(0,0); }
+    25%  { transform: translate(-64px,32px); }
+    50%  { transform: translate(32px,-64px); }
+    75%  { transform: translate(-32px,-32px); }
+    100% { transform: translate(64px,64px); }
+  }
+
+  /* ── Background glows ── */
+  .bg-glow {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    filter: blur(80px);
+  }
+
+  /* ── Upper labels ── */
+  .upper-label {
+    position: absolute;
+    top: 300px; left: 60px;
+    width: 840px;
+    text-align: center;
+    font-family: "DM Mono", monospace;
+    font-size: 24px; font-weight: 400;
+    letter-spacing: 0.02em;
+    color: #6B7280;
+  }
+
+  /* ═══ Scene 1 — Quiet Removal ═══ */
+  #s1-hairline {
+    width: 600px; height: 1px;
+    background: rgba(107,114,128,0.2);
+    margin-bottom: 40px;
+    transform: scaleX(0);
+    transform-origin: center;
+  }
+  #s1-hero {
+    font-size: 80px; font-weight: 700;
+    letter-spacing: -0.03em;
+    color: #E2E4E8;
+    text-align: center; line-height: 1.05;
+  }
+  #s1-sub {
+    font-size: 56px; font-weight: 700;
+    letter-spacing: -0.03em;
+    color: #D94F3D;
+    text-align: center;
+    margin-top: 28px;
+  }
+  #s1-glow { top: 580px; left: 240px; width: 600px; height: 600px; background: rgba(217,79,61,0.15); }
+
+  /* ═══ Scene 2 — The Tweet ═══ */
+  #s2-ghost {
+    position: absolute;
+    top: 520px; left: 60px;
+    width: 840px; text-align: center;
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 280px; font-weight: 700;
+    color: rgba(226,228,232,0.06);
+    letter-spacing: -0.03em;
+    pointer-events: none; line-height: 1;
+  }
+  #s2-counter {
+    font-size: 150px; font-weight: 700;
+    letter-spacing: -0.03em;
+    color: #D94F3D;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  #s2-views {
+    font-size: 40px; font-weight: 700;
+    letter-spacing: 0.1em;
+    color: #E2E4E8;
+    text-align: center;
+    margin-top: 12px;
+    opacity: 0;
+  }
+  #s2-glow { top: 560px; left: 200px; width: 680px; height: 600px; background: rgba(217,79,61,0.15); }
+
+  /* ═══ Scene 3 — Compute Problem ═══ */
+  #s3-title {
+    font-size: 48px; font-weight: 700;
+    letter-spacing: -0.03em;
+    color: #E2E4E8;
+    text-align: center;
+    margin-bottom: 50px;
+  }
+  .s3-bar-group { width: 780px; margin-bottom: 24px; }
+  .s3-bar-label {
+    font-family: "DM Mono", monospace;
+    font-size: 22px; font-weight: 400;
+    letter-spacing: 0.02em;
+    color: #6B7280;
+    margin-bottom: 8px;
+  }
+  .s3-bar {
+    height: 60px; border-radius: 6px;
+    transform-origin: left center;
+    transform: scaleX(0);
+  }
+  #s3-bar-chat { width: 117px; background: #6B7280; }
+  #s3-bar-code { width: 741px; background: #D94F3D; }
+  .s3-grid-lines {
+    position: absolute;
+    top: 620px; left: 60px;
+    width: 840px; height: 360px;
+    pointer-events: none;
+  }
+  .s3-grid-line {
+    width: 100%; height: 1px;
+    background: rgba(107,114,128,0.08);
+    margin-bottom: 59px;
+  }
+
+  /* ═══ Scene 4 — A/B Test ═══ */
+  #s4-claim {
+    font-family: "DM Mono", monospace;
+    font-size: 36px; font-weight: 400;
+    letter-spacing: 0.02em;
+    color: #6B7280;
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  .s4-hero-wrap { position: relative; display: inline-block; }
+  #s4-stat {
+    font-size: 150px; font-weight: 700;
+    letter-spacing: -0.03em;
+    color: #C9A84C;
+    text-align: center; line-height: 1;
+    position: relative; z-index: 1;
+  }
+  #s4-circle {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 140%; height: 170%;
+    transform: translate(-50%,-50%) rotate(-3deg) scale(0);
+    border: 3px solid #C9A84C;
+    border-radius: 50%;
+    pointer-events: none; z-index: 0;
+  }
+  #s4-glow { top: 560px; left: 240px; width: 600px; height: 600px; background: rgba(201,168,76,0.12); }
+
+  /* ═══ Scene 5 — The Receipts ═══ */
+  #s5-headline {
+    font-size: 48px; font-weight: 700;
+    letter-spacing: -0.03em;
+    color: #E2E4E8;
+    text-align: center;
+    margin-bottom: 50px;
+  }
+  .s5-diff-block { width: 780px; text-align: left; }
+  .s5-url-line {
+    font-family: "DM Mono", monospace;
+    font-size: 32px; font-weight: 400;
+    letter-spacing: 0.02em;
+    padding: 16px 20px;
+    position: relative;
+    display: inline-block;
+    line-height: 1.4;
+  }
+  #s5-old-url { color: #6B7280; }
+  #s5-strikethrough {
+    position: absolute;
+    top: 50%; left: 0;
+    width: 100%; height: 3px;
+    background: #D94F3D;
+    transform: scaleX(0);
+    transform-origin: left center;
+  }
+  #s5-new-url { color: #C9A84C; margin-top: 8px; }
+  #s5-highlight-bar {
+    position: absolute;
+    top: 0; left: -6px; right: -6px; bottom: 0;
+    background: rgba(201,168,76,0.15);
+    border-radius: 4px;
+    transform: scaleX(0);
+    transform-origin: left center;
+    z-index: -1;
+  }
+  .s5-scanlines {
+    position: absolute;
+    top: 0; left: 0;
+    width: 1080px; height: 1920px;
+    pointer-events: none;
+    background: repeating-linear-gradient(to bottom, transparent 0px, transparent 2px, rgba(226,228,232,0.04) 2px, rgba(226,228,232,0.04) 4px);
+  }
+  #s5-evidence-wash {
+    position: absolute;
+    top: 500px; left: 0;
+    width: 1080px; height: 600px;
+    background: radial-gradient(ellipse at center, rgba(201,168,76,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* ═══ Scene 6 — The Reversal ═══ */
+  #s6-label {
+    font-family: "DM Mono", monospace;
+    font-size: 28px; font-weight: 400;
+    letter-spacing: 0.02em;
+    color: #6B7280;
+    text-align: center;
+    margin-bottom: 30px;
+  }
+  #s6-hero {
+    font-size: 88px; font-weight: 700;
+    letter-spacing: -0.03em;
+    color: #E2E4E8;
+    text-align: center; line-height: 1;
+  }
+  #s6-underline {
+    width: 460px; height: 3px;
+    background: #D94F3D;
+    margin-top: 16px;
+    transform: scaleX(0);
+    transform-origin: left center;
+  }
+  #s6-glow { top: 600px; left: 260px; width: 560px; height: 560px; background: rgba(217,79,61,0.08); }
+
+  /* ═══ Scene 7 — The Admission ═══ */
+  .s7-quote-panel {
+    background: #141A21;
+    border-left: 3px solid #C9A84C;
+    padding: 40px;
+    max-width: 780px; width: 780px;
+    box-sizing: border-box;
+  }
+  #s7-quote {
+    font-family: "DM Mono", monospace;
+    font-size: 38px; font-weight: 400;
+    letter-spacing: 0.02em;
+    color: #E2E4E8;
+    line-height: 1.4;
+  }
+  #s7-attribution {
+    font-family: "DM Mono", monospace;
+    font-size: 22px; font-weight: 400;
+    letter-spacing: 0.02em;
+    color: #6B7280;
+    margin-top: 28px;
+  }
+  #s7-evidence-wash {
+    position: absolute;
+    top: 500px; left: 0;
+    width: 1080px; height: 600px;
+    background: radial-gradient(ellipse at center, rgba(201,168,76,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .s7-scanlines {
+    position: absolute;
+    top: 0; left: 0;
+    width: 1080px; height: 1920px;
+    pointer-events: none;
+    background: repeating-linear-gradient(to bottom, transparent 0px, transparent 2px, rgba(226,228,232,0.04) 2px, rgba(226,228,232,0.04) 4px);
+  }
+
+  /* ═══ Scene 8 — The Warning ═══ */
+  #s8-setup {
+    font-size: 40px; font-weight: 700;
+    letter-spacing: -0.03em;
+    color: #6B7280;
+    text-align: center;
+    margin-bottom: 36px;
+    max-width: 780px;
+  }
+  .shimmer-sweep-target {
+    position: relative;
+    overflow: visible;
+    display: inline-block;
+  }
+  .shimmer-sweep-target .shimmer-mask {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    background: linear-gradient(
+      120deg,
+      transparent 0%,
+      transparent calc(var(--shimmer-pos, -20%) - 12%),
+      rgba(217,79,61,0.3) var(--shimmer-pos, -20%),
+      transparent calc(var(--shimmer-pos, -20%) + 12%),
+      transparent 100%
+    );
+  }
+  #s8-cta {
+    font-size: 66px; font-weight: 700;
+    letter-spacing: -0.03em;
+    color: #D94F3D;
+    text-align: center;
+    line-height: 1.15;
+    max-width: 780px;
+  }
+  #s8-glow { top: 560px; left: 200px; width: 680px; height: 600px; background: rgba(217,79,61,0.15); }
+
+  /* ═══ Instagram Follow Overlay ═══ */
+  #ig-overlay {
+    position: absolute;
+    top: 0; left: 0;
+    width: 1080px; height: 1920px;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    background: rgba(11,14,17,0.85);
+  }
+  .ig-follow-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+  .ig-follow-text {
+    font-size: 64px; font-weight: 700;
+    letter-spacing: -0.03em;
+    color: #E2E4E8;
+    text-align: center;
+  }
+  .ig-follow-sub {
+    font-family: "DM Mono", monospace;
+    font-size: 28px; font-weight: 400;
+    color: #6B7280;
+    letter-spacing: 0.02em;
+  }
+  .ig-follow-btn {
+    margin-top: 8px;
+    padding: 18px 60px;
+    background: #D94F3D;
+    border-radius: 12px;
+    font-size: 32px; font-weight: 700;
+    color: #E2E4E8;
+    letter-spacing: -0.02em;
+  }
+
+  /* ═══ Captions ═══ */
+  .caption-container {
+    position: absolute;
+    left: 0; width: 1080px;
+    top: 1140px; height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 30;
+    pointer-events: none;
+  }
+  .caption-group {
+    position: absolute;
+    width: 860px;
+    text-align: center;
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 48px; font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #E2E4E8;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.7);
+    opacity: 0; visibility: hidden;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0 12px;
+    line-height: 1.3;
+  }
+  .caption-word { display: inline-block; }
+  .caption-word.number-word {
+    color: #D94F3D;
+    transform: scale(1.15);
+    display: inline-block;
+  }
+  .caption-word.evidence-word { color: #C9A84C; }
+  .caption-word.accent-word { color: #D94F3D; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-width="1080" data-height="1920" data-start="0" data-duration="34.43">
+
+  <!-- ═══ Audio ═══ -->
+  <audio id="narration" data-start="0" data-duration="31.43" data-track-index="10" src="narration.wav" data-volume="1"></audio>
+
+  <!-- ═══ Scene 1 — The Quiet Removal (0–5.8s) ═══ -->
+  <div id="scene1" class="scene" data-start="0" data-duration="5.8" data-track-index="0">
+    <div id="s1-glow" class="bg-glow"></div>
+    <div class="scene-content">
+      <div id="s1-hairline"></div>
+      <div id="s1-hero">QUIETLY<br>REMOVED</div>
+      <div id="s1-sub">$20 PRO PLAN</div>
+    </div>
+    <div class="upper-label" id="s1-label">ANTHROPIC · CLAUDE CODE</div>
+  </div>
+
+  <!-- ═══ Scene 2 — The Tweet (5.8–9.2s) ═══ -->
+  <div id="scene2" class="scene" data-start="5.8" data-duration="3.4" data-track-index="0">
+    <div id="s2-glow" class="bg-glow"></div>
+    <div id="s2-ghost">900K</div>
+    <div class="scene-content">
+      <div id="s2-counter">0</div>
+      <div id="s2-views">VIEWS</div>
+    </div>
+    <div class="upper-label" id="s2-label">ONE TWEET</div>
+  </div>
+
+  <!-- ═══ Scene 3 — The Compute Problem (9.2–13.6s) ═══ -->
+  <div id="scene3" class="scene" data-start="9.2" data-duration="4.4" data-track-index="0">
+    <div class="s3-grid-lines">
+      <div class="s3-grid-line"></div>
+      <div class="s3-grid-line"></div>
+      <div class="s3-grid-line"></div>
+      <div class="s3-grid-line"></div>
+      <div class="s3-grid-line"></div>
+      <div class="s3-grid-line"></div>
+    </div>
+    <div class="scene-content">
+      <div id="s3-title">ORDERS OF MAGNITUDE</div>
+      <div class="s3-bar-group">
+        <div class="s3-bar-label">CHAT</div>
+        <div id="s3-bar-chat" class="s3-bar"></div>
+      </div>
+      <div class="s3-bar-group">
+        <div class="s3-bar-label">CLAUDE CODE</div>
+        <div id="s3-bar-code" class="s3-bar"></div>
+      </div>
+    </div>
+    <div class="upper-label" id="s3-label">COMPUTE COST</div>
+  </div>
+
+  <!-- ═══ Scene 4 — The A/B Test (13.6–16.3s) ═══ -->
+  <div id="scene4" class="scene" data-start="13.6" data-duration="2.7" data-track-index="0">
+    <div id="s4-glow" class="bg-glow"></div>
+    <div class="scene-content">
+      <div id="s4-claim">"A/B TEST"</div>
+      <div class="s4-hero-wrap">
+        <div id="s4-stat">2%</div>
+        <div id="s4-circle"></div>
+      </div>
+    </div>
+    <div class="upper-label" id="s4-label">ANTHROPIC'S CLAIM</div>
+  </div>
+
+  <!-- ═══ Scene 5 — The Receipts (16.3–20.7s) ═══ -->
+  <div id="scene5" class="scene" data-start="16.3" data-duration="4.4" data-track-index="0">
+    <div id="s5-evidence-wash"></div>
+    <div class="s5-scanlines"></div>
+    <div class="scene-content">
+      <div id="s5-headline">SUPPORT DOCS REWRITTEN</div>
+      <div class="s5-diff-block">
+        <div id="s5-old-url" class="s5-url-line">
+          <span id="s5-old-text">…/pro-or-max-plan</span>
+          <div id="s5-strikethrough"></div>
+        </div>
+        <div id="s5-new-url" class="s5-url-line">
+          <span id="s5-new-text">…/max-plan</span>
+          <div id="s5-highlight-bar"></div>
+        </div>
+      </div>
+    </div>
+    <div class="upper-label" id="s5-label" style="color:#C9A84C">THE EVIDENCE</div>
+  </div>
+
+  <!-- ═══ Scene 6 — The Reversal (20.7–22.6s) ═══ -->
+  <div id="scene6" class="scene" data-start="20.7" data-duration="1.9" data-track-index="0">
+    <div id="s6-glow" class="bg-glow"></div>
+    <div class="scene-content">
+      <div id="s6-label">AFTER THE BACKLASH</div>
+      <div id="s6-hero">REVERSED</div>
+      <div id="s6-underline"></div>
+    </div>
+  </div>
+
+  <!-- ═══ Scene 7 — The Admission (22.6–26.7s) ═══ -->
+  <div id="scene7" class="scene" data-start="22.6" data-duration="4.1" data-track-index="0">
+    <div id="s7-evidence-wash"></div>
+    <div class="s7-scanlines"></div>
+    <div class="scene-content">
+      <div class="s7-quote-panel" id="s7-panel">
+        <div id="s7-quote">"our current plans weren't built for this"</div>
+        <div id="s7-attribution">— MADHAV AVASARE, VP OF PRODUCT</div>
+      </div>
+    </div>
+    <div class="upper-label" id="s7-label" style="color:#C9A84C">THE ADMISSION</div>
+  </div>
+
+  <!-- ═══ Scene 8 — The Warning (26.7–34.43s) ═══ -->
+  <div id="scene8" class="scene" data-start="26.7" data-duration="7.73" data-track-index="0">
+    <div id="s8-glow" class="bg-glow"></div>
+    <div class="scene-content">
+      <div id="s8-setup">THE PRICING CHANGE IS COMING BACK</div>
+      <div class="shimmer-sweep-target" id="s8-shimmer">
+        <div id="s8-cta">EVALUATE YOUR<br>ALTERNATIVES</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Instagram Follow Overlay ═══ -->
+  <div id="ig-overlay">
+    <div class="ig-follow-card">
+      <div class="ig-follow-text">Follow for more</div>
+      <div class="ig-follow-sub">tech news you need to hear</div>
+      <div class="ig-follow-btn">FOLLOW</div>
+    </div>
+  </div>
+
+  <!-- ═══ Captions ═══ -->
+  <div class="caption-container" id="caption-layer"></div>
+
+  <!-- ═══ Global overlays ═══ -->
+  <div class="vignette"></div>
+  <div id="grain-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:100;overflow:hidden;">
+    <div class="grain-texture"></div>
+  </div>
+
+</div>
+
+<script>
+window.__timelines = window.__timelines || {};
+var tl = gsap.timeline({ paused: true });
+
+/* ═══════════════════════════════════════
+   SCENE TIMINGS
+   ═══════════════════════════════════════ */
+var S1 = 0, S2 = 5.8, S3 = 9.2, S4 = 13.6, S5 = 16.3, S6 = 20.7, S7 = 22.6, S8 = 26.7;
+
+/* ═══════════════════════════════════════
+   SCENE 1 — The Quiet Removal (0–5.8s)
+   ═══════════════════════════════════════ */
+tl.fromTo("#s1-glow", { scale: 1 }, { scale: 1.05, duration: 3, ease: "sine.inOut", yoyo: true, repeat: 1 }, S1);
+tl.to("#s1-hairline", { scaleX: 1, duration: 0.3, ease: "expo.out" }, S1 + 0.1);
+tl.from("#s1-hero", { y: -30, opacity: 0, duration: 0.4, ease: "power3.out" }, S1 + 0.2);
+tl.from("#s1-sub", { y: -20, opacity: 0, duration: 0.35, ease: "power2.out" }, S1 + 0.35);
+tl.from("#s1-label", { opacity: 0, duration: 0.3, ease: "power1.out" }, S1 + 0.2);
+
+/* ═══════════════════════════════════════
+   TRANSITION 1→2  Push slide LEFT 0.3s
+   ═══════════════════════════════════════ */
+tl.to("#scene1", { x: -1080, duration: 0.3, ease: "power3.inOut" }, S2);
+tl.fromTo("#scene2", { x: 1080, opacity: 1 }, { x: 0, duration: 0.3, ease: "power3.inOut" }, S2);
+
+/* ═══════════════════════════════════════
+   SCENE 2 — The Tweet (5.8–9.2s)
+   ═══════════════════════════════════════ */
+tl.fromTo("#s2-ghost", { y: 0 }, { y: -20, duration: 3.4, ease: "none" }, S2);
+tl.fromTo("#s2-glow", { scale: 1 }, { scale: 1.08, duration: 3, ease: "sine.inOut" }, S2);
+tl.from("#s2-label", { opacity: 0, duration: 0.2, ease: "power1.out" }, S2 + 0.1);
+
+/* Counter 0→900K */
+var counterObj = { val: 0 };
+tl.to(counterObj, {
+  val: 900000,
+  duration: 0.6,
+  ease: "power2.out",
+  onUpdate: function() {
+    var el = document.getElementById("s2-counter");
+    var v = Math.round(counterObj.val);
+    if (v >= 900000) { el.textContent = "900K"; }
+    else if (v >= 1000) { el.textContent = Math.round(v / 1000) + "K"; }
+    else { el.textContent = String(v); }
+  }
+}, S2 + 0.15);
+tl.to("#s2-views", { opacity: 1, duration: 0.25, ease: "power2.out" }, S2 + 0.8);
+
+/* ═══════════════════════════════════════
+   TRANSITION 2→3  Push slide LEFT 0.3s
+   ═══════════════════════════════════════ */
+tl.to("#scene2", { x: -1080, duration: 0.3, ease: "power3.inOut" }, S3);
+tl.fromTo("#scene3", { x: 1080, opacity: 1 }, { x: 0, duration: 0.3, ease: "power3.inOut" }, S3);
+
+/* ═══════════════════════════════════════
+   SCENE 3 — Compute Problem (9.2–13.6s)
+   ═══════════════════════════════════════ */
+tl.from("#s3-label", { opacity: 0, duration: 0.2, ease: "power1.out" }, S3 + 0.1);
+tl.from(".s3-bar-label", { opacity: 0, duration: 0.2, ease: "power1.out", stagger: 0.15 }, S3 + 0.2);
+tl.to("#s3-bar-chat", { scaleX: 1, duration: 0.3, ease: "power2.out" }, S3 + 0.25);
+tl.to("#s3-bar-code", { scaleX: 1, duration: 0.5, ease: "power2.out" }, S3 + 0.45);
+tl.from("#s3-title", { opacity: 0, y: 20, duration: 0.35, ease: "power3.out" }, S3 + 0.95);
+
+/* ═══════════════════════════════════════
+   TRANSITION 3→4  Squeeze 0.3s
+   ═══════════════════════════════════════ */
+tl.to("#scene3", { scaleX: 0, transformOrigin: "left center", duration: 0.3, ease: "power2.inOut" }, S4);
+tl.fromTo("#scene4",
+  { scaleX: 0, transformOrigin: "right center", opacity: 1 },
+  { scaleX: 1, duration: 0.3, ease: "power2.inOut" }, S4 + 0.05);
+tl.set("#scene3", { opacity: 0 }, S4 + 0.35);
+
+/* ═══════════════════════════════════════
+   SCENE 4 — A/B Test (13.6–16.3s)
+   ═══════════════════════════════════════ */
+tl.fromTo("#s4-glow", { scale: 1 }, { scale: 1.05, duration: 2.7, ease: "sine.inOut" }, S4);
+tl.from("#s4-label", { opacity: 0, duration: 0.2, ease: "power1.out" }, S4 + 0.1);
+tl.from("#s4-claim", { opacity: 0, duration: 0.25, ease: "power2.out" }, S4 + 0.15);
+tl.from("#s4-stat", { scale: 0.8, opacity: 0, duration: 0.25, ease: "back.out(1.4)" }, S4 + 0.25);
+tl.to("#s4-circle", { scale: 1, rotation: -3, duration: 0.5, ease: "power2.inOut", transformOrigin: "center center" }, S4 + 0.55);
+
+/* ═══════════════════════════════════════
+   TRANSITION 4→5  Push slide LEFT 0.3s
+   ═══════════════════════════════════════ */
+tl.to("#scene4", { x: -1080, duration: 0.3, ease: "power3.inOut" }, S5);
+tl.fromTo("#scene5", { x: 1080, opacity: 1 }, { x: 0, duration: 0.3, ease: "power3.inOut" }, S5);
+
+/* ═══════════════════════════════════════
+   SCENE 5 — The Receipts (16.3–20.7s)
+   ═══════════════════════════════════════ */
+tl.fromTo(".s5-scanlines", { y: 0 }, { y: -40, duration: 4.4, ease: "none" }, S5);
+tl.from("#s5-label", { opacity: 0, duration: 0.2, ease: "power1.out" }, S5 + 0.1);
+tl.from("#s5-headline", { x: -40, opacity: 0, duration: 0.35, ease: "power3.out" }, S5 + 0.2);
+tl.from("#s5-old-text", { opacity: 0, duration: 0.4, ease: "power1.out" }, S5 + 0.55);
+tl.to("#s5-strikethrough", { scaleX: 1, duration: 0.2, ease: "power2.out" }, S5 + 1.0);
+tl.from("#s5-new-text", { opacity: 0, duration: 0.3, ease: "power1.out" }, S5 + 1.25);
+tl.to("#s5-highlight-bar", { scaleX: 1, duration: 0.3, ease: "power2.out" }, S5 + 1.6);
+
+/* ═══════════════════════════════════════
+   TRANSITION 5→6  Hard cut
+   ═══════════════════════════════════════ */
+tl.set("#scene5", { opacity: 0 }, S6);
+tl.set("#scene6", { opacity: 1 }, S6);
+
+/* ═══════════════════════════════════════
+   SCENE 6 — The Reversal (20.7–22.6s)
+   ═══════════════════════════════════════ */
+tl.fromTo("#s6-glow", { scale: 1 }, { scale: 1.04, duration: 1.9, ease: "sine.inOut" }, S6);
+tl.from("#s6-label", { opacity: 0, duration: 0.2, ease: "power2.out" }, S6 + 0.1);
+tl.from("#s6-hero", { y: 60, opacity: 0, duration: 0.2, ease: "expo.out" }, S6 + 0.2);
+tl.to("#s6-underline", { scaleX: 1, duration: 0.2, ease: "power2.out" }, S6 + 0.4);
+
+/* ═══════════════════════════════════════
+   TRANSITION 6→7  Blur crossfade 0.4s
+   ═══════════════════════════════════════ */
+tl.to("#scene6", { filter: "blur(10px)", scale: 1.03, opacity: 0, duration: 0.4, ease: "sine.inOut" }, S7);
+tl.fromTo("#scene7",
+  { filter: "blur(10px)", scale: 0.97, opacity: 0 },
+  { filter: "blur(0px)", scale: 1, opacity: 1, duration: 0.4, ease: "sine.inOut" }, S7 + 0.05);
+
+/* ═══════════════════════════════════════
+   SCENE 7 — The Admission (22.6–26.7s)
+   ═══════════════════════════════════════ */
+tl.from("#s7-label", { opacity: 0, duration: 0.25, ease: "power1.out" }, S7 + 0.15);
+tl.from("#s7-panel", { opacity: 0, x: -30, duration: 0.35, ease: "power3.out" }, S7 + 0.2);
+tl.from("#s7-quote", { opacity: 0, duration: 0.3, ease: "power2.out" }, S7 + 0.35);
+tl.from("#s7-attribution", { opacity: 0, duration: 0.3, ease: "power1.out" }, S7 + 0.65);
+
+/* ═══════════════════════════════════════
+   TRANSITION 7→8  Push slide LEFT 0.3s
+   ═══════════════════════════════════════ */
+tl.to("#scene7", { x: -1080, duration: 0.3, ease: "power3.inOut" }, S8);
+tl.fromTo("#scene8", { x: 1080, opacity: 1 }, { x: 0, duration: 0.3, ease: "power3.inOut" }, S8);
+
+/* ═══════════════════════════════════════
+   SCENE 8 — The Warning (26.7–34.43s)
+   ═══════════════════════════════════════ */
+tl.fromTo("#s8-glow", { scale: 1 }, { scale: 1.15, duration: 7, ease: "sine.inOut" }, S8);
+tl.from("#s8-setup", { opacity: 0, duration: 0.3, ease: "power2.out" }, S8 + 0.15);
+tl.from("#s8-cta", { y: 50, opacity: 0, duration: 0.3, ease: "expo.out" }, S8 + 0.4);
+
+/* Shimmer sweep */
+(function() {
+  var t = document.getElementById("s8-shimmer");
+  if (t && !t.querySelector(".shimmer-mask")) {
+    var m = document.createElement("div");
+    m.className = "shimmer-mask";
+    t.appendChild(m);
+  }
+})();
+tl.fromTo("#s8-shimmer", { "--shimmer-pos": "-20%" }, { "--shimmer-pos": "120%", duration: 1.2, ease: "power2.inOut" }, S8 + 0.8);
+
+/* Scene 8 fade-out (final scene exception) */
+tl.to("#scene8", { opacity: 0, duration: 1.0, ease: "sine.inOut" }, 31.43);
+
+/* ═══════════════════════════════════════
+   INSTAGRAM FOLLOW OVERLAY (31.43–34.43s)
+   ═══════════════════════════════════════ */
+tl.to("#ig-overlay", { opacity: 1, duration: 0.4, ease: "power2.out" }, 31.43);
+tl.from(".ig-follow-text", { y: 30, opacity: 0, duration: 0.35, ease: "power3.out" }, 31.6);
+tl.from(".ig-follow-sub", { y: 20, opacity: 0, duration: 0.3, ease: "power2.out" }, 31.75);
+tl.from(".ig-follow-btn", { scale: 0.9, opacity: 0, duration: 0.25, ease: "back.out(1.4)" }, 31.9);
+
+/* ═══════════════════════════════════════
+   CAPTIONS — Word-synced
+   ═══════════════════════════════════════ */
+var TRANSCRIPT = [
+  {"text":"Anthropic","start":0.03,"end":0.43},
+  {"text":"quietly","start":0.62,"end":0.93},
+  {"text":"removed","start":0.93,"end":1.25},
+  {"text":"Claude","start":1.39,"end":1.68},
+  {"text":"Code","start":1.74,"end":1.91},
+  {"text":"from","start":2.02,"end":2.2},
+  {"text":"its","start":2.26,"end":2.4},
+  {"text":"$20","start":2.4,"end":2.76},
+  {"text":"Pro","start":2.84,"end":3.03},
+  {"text":"plan,","start":3.1,"end":3.45},
+  {"text":"and","start":3.48,"end":3.52},
+  {"text":"developers","start":3.52,"end":4.06},
+  {"text":"noticed","start":4.1,"end":4.37},
+  {"text":"immediately.","start":4.49,"end":5.78},
+  {"text":"One","start":5.81,"end":5.9},
+  {"text":"tweet","start":5.96,"end":6.2},
+  {"text":"exposing","start":6.2,"end":6.61},
+  {"text":"the","start":6.64,"end":6.78},
+  {"text":"change","start":6.78,"end":7.03},
+  {"text":"hit","start":7.17,"end":7.26},
+  {"text":"900,000","start":7.26,"end":8.3},
+  {"text":"views","start":8.33,"end":8.54},
+  {"text":"in","start":8.54,"end":8.68},
+  {"text":"hours.","start":8.68,"end":9.16},
+  {"text":"The","start":9.19,"end":9.28},
+  {"text":"real","start":9.34,"end":9.56},
+  {"text":"problem?","start":9.56,"end":10.16},
+  {"text":"Claude","start":10.19,"end":10.45},
+  {"text":"Code's","start":10.45,"end":10.71},
+  {"text":"sessions","start":10.78,"end":11.11},
+  {"text":"burn","start":11.11,"end":11.3},
+  {"text":"orders","start":11.3,"end":11.41},
+  {"text":"of","start":11.61,"end":11.68},
+  {"text":"magnitude","start":11.68,"end":12.07},
+  {"text":"more","start":12.18,"end":12.28},
+  {"text":"compute","start":12.34,"end":12.63},
+  {"text":"than","start":12.63,"end":12.82},
+  {"text":"regular","start":12.82,"end":13.15},
+  {"text":"chat.","start":13.15,"end":13.56},
+  {"text":"Anthropic","start":13.59,"end":13.99},
+  {"text":"called","start":14.18,"end":14.35},
+  {"text":"it","start":14.35,"end":14.45},
+  {"text":"a","start":14.45,"end":14.5},
+  {"text":"small","start":14.5,"end":14.76},
+  {"text":"A-B","start":14.76,"end":14.88},
+  {"text":"test","start":14.95,"end":15.12},
+  {"text":"on","start":15.12,"end":15.14},
+  {"text":"two","start":15.23,"end":15.38},
+  {"text":"percent","start":15.38,"end":15.75},
+  {"text":"of","start":15.75,"end":15.83},
+  {"text":"sign-ups.","start":15.85,"end":16.32},
+  {"text":"But","start":16.41,"end":16.53},
+  {"text":"they","start":16.53,"end":16.74},
+  {"text":"had","start":16.74,"end":16.9},
+  {"text":"already","start":16.9,"end":17.36},
+  {"text":"rewritten","start":17.39,"end":17.79},
+  {"text":"their","start":17.98,"end":18.22},
+  {"text":"public","start":18.22,"end":18.59},
+  {"text":"support","start":18.59,"end":18.94},
+  {"text":"docs","start":19.03,"end":19.26},
+  {"text":"as","start":19.26,"end":19.27},
+  {"text":"if","start":19.38,"end":19.49},
+  {"text":"it","start":19.53,"end":19.62},
+  {"text":"were","start":19.62,"end":19.86},
+  {"text":"permanent.","start":19.86,"end":20.66},
+  {"text":"After","start":20.69,"end":20.9},
+  {"text":"the","start":20.9,"end":20.97},
+  {"text":"backlash,","start":21.04,"end":21.47},
+  {"text":"they","start":21.52,"end":21.71},
+  {"text":"reversed","start":21.71,"end":21.91},
+  {"text":"course.","start":22.11,"end":22.57},
+  {"text":"But","start":22.63,"end":22.78},
+  {"text":"the","start":22.79,"end":22.91},
+  {"text":"VP","start":22.98,"end":23.03},
+  {"text":"of","start":23.03,"end":23.23},
+  {"text":"Product","start":23.23,"end":23.67},
+  {"text":"admitted","start":23.67,"end":24.18},
+  {"text":"their","start":24.18,"end":24.5},
+  {"text":"current","start":24.5,"end":24.95},
+  {"text":"plans","start":24.95,"end":25.27},
+  {"text":"were","start":25.27,"end":25.52},
+  {"text":"not","start":25.52,"end":25.71},
+  {"text":"built","start":25.71,"end":26.03},
+  {"text":"for","start":26.03,"end":26.22},
+  {"text":"this.","start":26.22,"end":26.72},
+  {"text":"The","start":26.75,"end":26.84},
+  {"text":"pricing","start":26.9,"end":27.15},
+  {"text":"change","start":27.34,"end":27.65},
+  {"text":"is","start":27.65,"end":27.76},
+  {"text":"almost","start":27.76,"end":27.97},
+  {"text":"certainly","start":28.11,"end":28.63},
+  {"text":"coming","start":28.74,"end":28.99},
+  {"text":"back.","start":29.01,"end":29.33},
+  {"text":"Start","start":29.33,"end":29.48},
+  {"text":"evaluating","start":29.62,"end":30.21},
+  {"text":"your","start":30.21,"end":30.44},
+  {"text":"alternatives","start":30.44,"end":31.09},
+  {"text":"now.","start":31.21,"end":31.43}
+];
+
+/* Per-word styling lookup */
+var NUM_WORDS = {"$20":1,"900,000":1,"2%":1,"two":1,"percent":1};
+var ACCENT_WORDS = {"not":1,"built":1,"alternatives":1};
+
+/* Build groups: 3-4 words, break on pauses ≥150ms and sentence endings */
+var GROUPS = [];
+(function() {
+  var g = { words: [], start: 0, end: 0 };
+  for (var i = 0; i < TRANSCRIPT.length; i++) {
+    var w = TRANSCRIPT[i];
+    if (g.words.length === 0) g.start = w.start;
+    g.words.push(w);
+    g.end = w.end;
+    var isEnd = /[.!?]$/.test(w.text);
+    var isPause = (i < TRANSCRIPT.length - 1) && (TRANSCRIPT[i+1].start - w.end >= 0.15);
+    var isFull = g.words.length >= 4;
+    if (isEnd || isPause || isFull || i === TRANSCRIPT.length - 1) {
+      GROUPS.push({ words: g.words.slice(), start: g.start, end: g.end,
+        text: g.words.map(function(ww){ return ww.text; }).join(" ") });
+      g = { words: [], start: 0, end: 0 };
+    }
+  }
+})();
+
+/* Build caption DOM + timeline tweens */
+var captionLayer = document.getElementById("caption-layer");
+
+GROUPS.forEach(function(group, gi) {
+  var gEl = document.createElement("div");
+  gEl.className = "caption-group";
+  gEl.id = "cg-" + gi;
+
+  group.words.forEach(function(word, wi) {
+    var sp = document.createElement("span");
+    sp.className = "caption-word";
+    sp.id = "cw-" + gi + "-" + wi;
+    sp.textContent = word.text;
+
+    var clean = word.text.toLowerCase().replace(/[.,!?']/g, "");
+    if (NUM_WORDS[clean] || NUM_WORDS[word.text]) sp.classList.add("number-word");
+    if (ACCENT_WORDS[clean]) sp.classList.add("accent-word");
+
+    /* Claude Code → evidence color (first 5 groups only) */
+    if (clean === "claude" && wi + 1 < group.words.length &&
+        group.words[wi+1].text.toLowerCase().replace(/[.'s]/g,"").indexOf("code") === 0 && gi < 8) {
+      sp.classList.add("evidence-word");
+    }
+    if ((clean === "code" || clean === "codes") && wi > 0 &&
+        group.words[wi-1].text.toLowerCase() === "claude" && gi < 8) {
+      sp.classList.add("evidence-word");
+    }
+
+    gEl.appendChild(sp);
+  });
+
+  captionLayer.appendChild(gEl);
+
+  /* Fit text */
+  if (window.__hyperframes && window.__hyperframes.fitTextFontSize) {
+    var fit = window.__hyperframes.fitTextFontSize(group.text, {
+      fontFamily: "Space Grotesk", fontWeight: 700,
+      maxWidth: 840, baseFontSize: 48, minFontSize: 36
+    });
+    gEl.style.fontSize = fit.fontSize + "px";
+  }
+
+  /* Init hidden */
+  tl.set(gEl, { opacity: 0, visibility: "hidden", y: 20 }, 0);
+
+  /* Entrance: fade-up */
+  tl.to(gEl, { opacity: 1, visibility: "visible", y: 0, duration: 0.18, ease: "power3.out" }, group.start);
+
+  /* Per-word karaoke: accent highlight on active word */
+  group.words.forEach(function(word, wi) {
+    var wEl = document.getElementById("cw-" + gi + "-" + wi);
+    if (!wEl) return;
+    /* Only apply karaoke to words that don't already have a special static class */
+    var hasStatic = wEl.classList.contains("number-word") ||
+                    wEl.classList.contains("evidence-word") ||
+                    wEl.classList.contains("accent-word");
+    if (!hasStatic) {
+      tl.set(wEl, { color: "#D94F3D" }, word.start);
+      tl.set(wEl, { color: "#E2E4E8" }, word.end);
+    }
+  });
+
+  /* Exit: hard kill */
+  tl.to(gEl, { opacity: 0, duration: 0.12, ease: "power2.in" }, group.end - 0.12);
+  tl.set(gEl, { opacity: 0, visibility: "hidden" }, group.end);
+});
+
+/* Caption self-lint */
+GROUPS.forEach(function(group, gi) {
+  var el = document.getElementById("cg-" + gi);
+  if (!el) return;
+  tl.seek(group.end + 0.01);
+  var cs = window.getComputedStyle(el);
+  if (cs.opacity !== "0" && cs.visibility !== "hidden") {
+    console.warn("[caption-lint] group " + gi + " visible at t=" + (group.end + 0.01).toFixed(2) + "s");
+  }
+});
+tl.seek(0);
+
+window.__timelines["main"] = tl;
+</script>
+</body>
+</html>

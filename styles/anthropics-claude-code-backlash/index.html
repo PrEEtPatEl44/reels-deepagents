@@ -1,0 +1,1013 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Anthropic's Claude Code Backlash</title>
+    <style>
+      /* ---------- Design Tokens (DESIGN.md: Redline Memo) ---------- */
+      :root {
+        --ink-0: #15100C;
+        --ink-1: #1E1713;
+        --ink-2: #2A211B;
+        --paper: #F2E6D4;
+        --paper-dim: #B8A893;
+        --paper-ghost: #554A3F;
+        --clay: #C96F3C;
+        --clay-deep: #8A3D1A;
+        --redline: #E63030;
+        --diff-plus: #6BAA6B;
+        --caution: #E6A330;
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: var(--ink-0);
+        color: var(--paper);
+        font-family: "Space Grotesk", sans-serif;
+        overflow: hidden;
+      }
+
+      [data-composition-id="root"] {
+        position: relative;
+        width: 1080px;
+        height: 1920px;
+        background: var(--ink-0);
+        overflow: hidden;
+      }
+
+      /* ---------- Ambient layers (global) ---------- */
+      .dossier-vignette {
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(60% 60% at 22% 18%, rgba(30,23,19,0.45) 0%, rgba(30,23,19,0.0) 60%);
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      .grain {
+        position: absolute;
+        inset: -40px;
+        background-image:
+          repeating-radial-gradient(circle at 13% 27%, rgba(242,230,212,0.05) 0 1px, transparent 1px 3px),
+          repeating-radial-gradient(circle at 71% 63%, rgba(242,230,212,0.04) 0 1px, transparent 1px 4px),
+          repeating-radial-gradient(circle at 43% 81%, rgba(242,230,212,0.05) 0 1px, transparent 1px 3px);
+        background-size: 7px 7px, 9px 9px, 5px 5px;
+        mix-blend-mode: screen;
+        opacity: 0.08;
+        pointer-events: none;
+        z-index: 40;
+      }
+
+      .hairline-rules {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        z-index: 2;
+      }
+      .hairline-rules::before,
+      .hairline-rules::after {
+        content: "";
+        position: absolute;
+        left: 60px;
+        right: 60px;
+        height: 1px;
+        background: var(--ink-2);
+      }
+      .hairline-rules::before { top: 720px; }
+      .hairline-rules::after { top: 920px; }
+
+      /* ---------- Scene container ---------- */
+      .scene {
+        position: absolute;
+        inset: 0;
+        width: 1080px;
+        height: 1920px;
+        z-index: 10;
+        opacity: 0;
+        visibility: hidden;
+      }
+
+      /* FILE META strip (doc-beats) */
+      .file-meta {
+        position: absolute;
+        top: 280px;
+        left: 90px;
+        right: 210px;
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 500;
+        font-size: 22px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--paper-dim);
+        z-index: 15;
+      }
+      .file-meta .dot { color: var(--paper-ghost); margin: 0 10px; }
+
+      /* Corner crop marks (doc beats) */
+      .crop {
+        position: absolute;
+        width: 22px;
+        height: 22px;
+        border-color: var(--paper-ghost);
+        border-style: solid;
+        z-index: 14;
+      }
+      .crop.tl { top: 240px; left: 60px; border-width: 1px 0 0 1px; }
+      .crop.tr { top: 240px; right: 180px; border-width: 1px 1px 0 0; }
+      .crop.bl { bottom: 520px; left: 60px; border-width: 0 0 1px 1px; }
+      .crop.br { bottom: 520px; right: 180px; border-width: 0 1px 1px 0; }
+
+      /* Ghost word (upper-right of safe) */
+      .ghost-word {
+        position: absolute;
+        font-family: "Fraunces", serif;
+        font-weight: 900;
+        font-size: 300px;
+        color: var(--paper);
+        opacity: 0.04;
+        letter-spacing: -0.04em;
+        line-height: 0.85;
+        text-transform: uppercase;
+        top: 300px;
+        right: 180px;
+        text-align: right;
+        z-index: 3;
+        pointer-events: none;
+      }
+
+      /* Hero wrapper — absolute-centered around (480, 820) inside root */
+      .hero {
+        position: absolute;
+        left: 60px;
+        right: 180px;
+        top: 820px;
+        transform: translateY(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        z-index: 12;
+      }
+
+      /* Soft radial glow behind hero to fill the middle */
+      .hero-glow {
+        position: absolute;
+        left: calc(50% - 90px);
+        top: 820px;
+        transform: translate(-50%, -50%);
+        width: 900px;
+        height: 900px;
+        background: radial-gradient(circle, rgba(201,111,60,0.08) 0%, rgba(201,111,60,0.0) 60%);
+        pointer-events: none;
+        z-index: 4;
+      }
+
+      /* --------- Scene 1: YANK CLAUDE CODE --------- */
+      .s1-stack { display: flex; flex-direction: column; align-items: center; gap: 48px; }
+      .s1-eyebrow {
+        color: var(--redline);
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 700;
+        font-size: 34px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+      }
+      .s1-title { position: relative; display: inline-block; }
+      .s1-title .w {
+        font-family: "Fraunces", serif;
+        font-weight: 900;
+        font-size: 172px;
+        letter-spacing: -0.035em;
+        line-height: 0.9;
+        color: var(--paper);
+        white-space: nowrap;
+      }
+      .s1-strike {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 52%;
+        height: 8px;
+        background: var(--redline);
+        transform-origin: left center;
+        transform: scaleX(0);
+        z-index: 2;
+      }
+      .s1-sub {
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 500;
+        font-size: 40px;
+        color: var(--paper-dim);
+        letter-spacing: 0.02em;
+      }
+      .s1-sub .price { color: var(--paper); font-weight: 700; }
+
+      /* --------- Scene 2: DEVELOPERS NOTICED --------- */
+      .s2-eyebrow {
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 700;
+        font-size: 40px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--paper-dim);
+        margin-bottom: 40px;
+      }
+      .s2-head {
+        font-family: "Fraunces", serif;
+        font-weight: 900;
+        font-size: 168px;
+        line-height: 0.92;
+        letter-spacing: -0.035em;
+        color: var(--paper);
+      }
+      .s2-rule {
+        width: 0; height: 6px; background: var(--redline);
+        margin-top: 44px;
+      }
+
+      /* --------- Scene 3: 900,000 --------- */
+      .s3-num {
+        font-family: "Fraunces", serif;
+        font-weight: 900;
+        font-size: 280px;
+        letter-spacing: -0.04em;
+        color: var(--paper);
+        font-variant-numeric: tabular-nums;
+        line-height: 0.9;
+      }
+      .s3-label {
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 700;
+        font-size: 32px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--paper-dim);
+        margin-top: 40px;
+      }
+      .s3-label .sep { color: var(--paper-ghost); margin: 0 14px; }
+
+      /* --------- Scene 4: BREAKING CHANGE chip --------- */
+      .s4-chip {
+        background: var(--paper);
+        color: var(--ink-0);
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 700;
+        font-size: 58px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 30px 48px 30px 54px;
+        border-left: 8px solid var(--redline);
+        display: inline-block;
+      }
+      .s4-sub {
+        font-family: "JetBrains Mono", monospace;
+        font-weight: 400;
+        font-size: 30px;
+        color: var(--paper-dim);
+        margin-top: 40px;
+        letter-spacing: 0.02em;
+      }
+      .s4-source {
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 500;
+        font-size: 26px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--paper-dim);
+        margin-bottom: 44px;
+      }
+
+      /* --------- Scene 5: WALKED IT BACK --------- */
+      .s5-head {
+        font-family: "Fraunces", serif;
+        font-weight: 900;
+        font-size: 148px;
+        letter-spacing: -0.035em;
+        line-height: 0.92;
+        color: var(--paper);
+      }
+      .s5-dot { color: var(--clay); }
+      .s5-eyebrow {
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 700;
+        font-size: 32px;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: var(--paper-dim);
+        margin-bottom: 40px;
+      }
+
+      /* --------- Scene 6: VP QUOTE --------- */
+      .s6-quote {
+        font-family: "Fraunces", serif;
+        font-weight: 400;
+        font-style: italic;
+        font-size: 72px;
+        line-height: 1.12;
+        color: var(--paper);
+        letter-spacing: -0.02em;
+        text-align: center;
+        max-width: 780px;
+      }
+      .s6-quote .mark { color: var(--paper-ghost); font-weight: 900; font-style: normal; }
+      .s6-attr {
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 500;
+        font-size: 28px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--paper-dim);
+        margin-top: 48px;
+      }
+      .s6-attr .role { color: var(--paper-ghost); }
+
+      /* --------- Scene 7: URL DIFF --------- */
+      .s7-eyebrow {
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 700;
+        font-size: 28px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--paper-dim);
+        margin-bottom: 48px;
+      }
+      .s7-line {
+        font-family: "JetBrains Mono", monospace;
+        font-weight: 400;
+        font-size: 38px;
+        line-height: 1.3;
+        padding: 14px 22px;
+        position: relative;
+        display: inline-block;
+        text-align: left;
+        white-space: nowrap;
+      }
+      .s7-minus { color: var(--paper-dim); position: relative; }
+      .s7-minus .mark { color: var(--redline); font-weight: 700; margin-right: 14px; }
+      .s7-minus .strike {
+        position: absolute;
+        left: 60px;
+        right: 22px;
+        top: 50%;
+        height: 4px;
+        background: var(--redline);
+        transform-origin: left center;
+        transform: scaleX(0);
+      }
+      .s7-plus {
+        color: var(--paper);
+        border-left: 4px solid var(--diff-plus);
+        padding-left: 22px;
+        margin-top: 22px;
+      }
+      .s7-plus .mark { color: var(--diff-plus); font-weight: 700; margin-right: 14px; }
+      .s7-meta {
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 500;
+        font-size: 28px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--paper-dim);
+        margin-top: 52px;
+      }
+
+      /* --------- Scene 8: $100 MAX --------- */
+      .s8-num {
+        font-family: "Fraunces", serif;
+        font-weight: 900;
+        font-size: 340px;
+        letter-spacing: -0.04em;
+        color: var(--caution);
+        line-height: 0.9;
+        font-variant-numeric: tabular-nums;
+      }
+      .s8-underline {
+        height: 3px;
+        background: var(--caution);
+        transform: scaleX(0);
+        transform-origin: left center;
+        margin-top: 8px;
+        width: 360px;
+      }
+      .s8-label {
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 700;
+        font-size: 34px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--paper);
+        margin-top: 44px;
+      }
+      .s8-label .likely { color: var(--paper-dim); }
+      .s8-eyebrow {
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 700;
+        font-size: 28px;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: var(--paper-dim);
+        margin-bottom: 44px;
+      }
+
+      /* --------- Scene 9: ALTERNATIVES --------- */
+      .s9-eyebrow {
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 700;
+        font-size: 28px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--paper-dim);
+        margin-bottom: 56px;
+      }
+      .s9-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        width: 720px;
+        border-bottom: 1px solid var(--ink-2);
+        padding: 22px 0;
+      }
+      .s9-row .name {
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 700;
+        font-size: 48px;
+        letter-spacing: 0.02em;
+        color: var(--paper);
+      }
+      .s9-row .price {
+        font-family: "JetBrains Mono", monospace;
+        font-weight: 700;
+        font-size: 46px;
+        color: var(--paper);
+        font-variant-numeric: tabular-nums;
+      }
+      .s9-row.last .price { color: var(--redline); }
+
+      /* --------- Scene 10: FOLLOW FOR MORE + IG overlay --------- */
+      .s10-head {
+        font-family: "Fraunces", serif;
+        font-weight: 900;
+        font-size: 108px;
+        letter-spacing: -0.03em;
+        color: var(--paper);
+        line-height: 1;
+        display: inline-block;
+        position: relative;
+      }
+      .s10-head .more {
+        position: relative;
+        display: inline-block;
+      }
+      .s10-under {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -14px;
+        height: 6px;
+        background: var(--redline);
+        transform: scaleX(0);
+        transform-origin: left center;
+      }
+      .s10-eyebrow {
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 700;
+        font-size: 28px;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        color: var(--paper-dim);
+        margin-bottom: 48px;
+      }
+      .ig-card {
+        margin-top: 64px;
+        background: var(--ink-1);
+        border: 1px solid var(--ink-2);
+        padding: 28px 36px;
+        display: inline-flex;
+        align-items: center;
+        gap: 22px;
+        border-radius: 4px;
+      }
+      .ig-card .at {
+        font-family: "JetBrains Mono", monospace;
+        font-weight: 700;
+        font-size: 40px;
+        color: var(--paper);
+      }
+      .ig-card .label {
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 500;
+        font-size: 22px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--paper-dim);
+      }
+
+      /* --------- Captions --------- */
+      .caption-band {
+        position: absolute;
+        left: 90px;
+        right: 90px;
+        top: 1240px;
+        height: 140px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 30;
+        pointer-events: none;
+      }
+      .caption-group {
+        position: absolute;
+        left: 0;
+        right: 0;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 0 16px;
+        padding: 20px 32px;
+        background: rgba(21, 16, 12, 0.92);
+        border-radius: 6px;
+        opacity: 0;
+        visibility: hidden;
+        max-width: 860px;
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 700;
+        font-size: 52px;
+        letter-spacing: -0.01em;
+        line-height: 1.15;
+        color: var(--paper);
+        text-align: center;
+      }
+      .caption-group .w { color: var(--paper); }
+    </style>
+  </head>
+  <body>
+    <div
+      data-composition-id="root"
+      data-start="0"
+      data-duration="32.24"
+      data-width="1080"
+      data-height="1920"
+      data-track-index="0"
+    >
+      <!-- Ambient (global) -->
+      <div class="dossier-vignette"></div>
+      <div class="hairline-rules"></div>
+
+      <!-- ================= SCENE 1: YANK ================= -->
+      <div class="scene" id="s1">
+        <div class="file-meta">MEMO <span class="dot">·</span> 2026-04-22 <span class="dot">·</span> SOURCE: ARS TECHNICA</div>
+        <div class="crop tl"></div><div class="crop tr"></div><div class="crop bl"></div><div class="crop br"></div>
+        <div class="ghost-word" id="s1-ghost">REDACTED</div>
+        <div class="hero-glow"></div>
+        <div class="hero">
+          <div class="s1-stack">
+            <div class="s1-eyebrow" id="s1-eye">ANTHROPIC // QUIETLY YANKED</div>
+            <div class="s1-title">
+              <div class="w" id="s1-w">CLAUDE CODE</div>
+              <div class="s1-strike" id="s1-strike"></div>
+            </div>
+            <div class="s1-sub" id="s1-sub">FROM THE <span class="price">$20</span> PRO PLAN</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= SCENE 2: DEVELOPERS NOTICED FAST ================= -->
+      <div class="scene" id="s2">
+        <div class="ghost-word" id="s2-ghost">BACKLASH</div>
+        <div class="hero-glow"></div>
+        <div class="hero">
+          <div class="s2-eyebrow" id="s2-eye">DEVELOPERS // NOTICED</div>
+          <div class="s2-head" id="s2-head">FAST.</div>
+          <div class="s2-rule" id="s2-rule"></div>
+        </div>
+      </div>
+
+      <!-- ================= SCENE 3: 900,000 ================= -->
+      <div class="scene" id="s3">
+        <div class="ghost-word" id="s3-ghost">VIRAL</div>
+        <div class="hero-glow"></div>
+        <div class="hero">
+          <div class="s3-num" id="s3-num">0</div>
+          <div class="s3-label" id="s3-lab">TWEET VIEWS <span class="sep">·</span> 4 HOURS</div>
+        </div>
+      </div>
+
+      <!-- ================= SCENE 4: BREAKING CHANGE ================= -->
+      <div class="scene" id="s4">
+        <div class="file-meta">GITHUB <span class="dot">·</span> ISSUE #2847 <span class="dot">·</span> STATUS: OPEN</div>
+        <div class="crop tl"></div><div class="crop tr"></div><div class="crop bl"></div><div class="crop br"></div>
+        <div class="ghost-word" id="s4-ghost">ISSUE</div>
+        <div class="hero-glow"></div>
+        <div class="hero">
+          <div class="s4-source" id="s4-src">FILED BY THE COMMUNITY</div>
+          <div class="s4-chip" id="s4-chip">BREAKING CHANGE</div>
+          <div class="s4-sub" id="s4-sub">anthropics/claude-code · issue #2847</div>
+        </div>
+      </div>
+
+      <!-- ================= SCENE 5: WALKED IT BACK ================= -->
+      <div class="scene" id="s5">
+        <div class="ghost-word" id="s5-ghost">REVERSAL</div>
+        <div class="hero-glow"></div>
+        <div class="hero">
+          <div class="s5-eyebrow" id="s5-eye">ANTHROPIC // REVERSED</div>
+          <div class="s5-head" id="s5-head">WALKED IT BACK<span class="s5-dot">.</span></div>
+        </div>
+      </div>
+
+      <!-- ================= SCENE 6: VP QUOTE ================= -->
+      <div class="scene" id="s6">
+        <div class="ghost-word" id="s6-ghost">QUOTE</div>
+        <div class="hero-glow"></div>
+        <div class="hero">
+          <div class="s6-quote" id="s6-quote">
+            <span class="mark">&ldquo;</span>our current plans weren&rsquo;t built for this.<span class="mark">&rdquo;</span>
+          </div>
+          <div class="s6-attr" id="s6-attr">
+            — MADHAV AVASARE <span class="role">/ VP PRODUCT</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= SCENE 7: URL DIFF ================= -->
+      <div class="scene" id="s7">
+        <div class="file-meta">SUPPORT DOCS <span class="dot">·</span> DIFF <span class="dot">·</span> SITEWIDE</div>
+        <div class="crop tl"></div><div class="crop tr"></div><div class="crop bl"></div><div class="crop br"></div>
+        <div class="ghost-word" id="s7-ghost">DIFF</div>
+        <div class="hero-glow"></div>
+        <div class="hero">
+          <div class="s7-eyebrow" id="s7-eye">SITEWIDE REWRITE // 2% A/B TEST?</div>
+          <div class="s7-line s7-minus" id="s7-minus">
+            <span class="mark">−</span>support.anthropic.com/.../pro-or-max-plan
+            <span class="strike" id="s7-strike"></span>
+          </div>
+          <div class="s7-line s7-plus" id="s7-plus">
+            <span class="mark">+</span>support.anthropic.com/.../max-plan
+          </div>
+          <div class="s7-meta" id="s7-meta">PRO MENTION · REMOVED</div>
+        </div>
+      </div>
+
+      <!-- ================= SCENE 8: $100 MAX ================= -->
+      <div class="scene" id="s8">
+        <div class="ghost-word" id="s8-ghost">UPSELL</div>
+        <div class="hero-glow"></div>
+        <div class="hero">
+          <div class="s8-eyebrow" id="s8-eye">TRANSLATION</div>
+          <div class="s8-num" id="s8-num">$100</div>
+          <div class="s8-underline" id="s8-under"></div>
+          <div class="s8-label" id="s8-lab">MAX TIER <span class="likely">(LIKELY)</span></div>
+        </div>
+      </div>
+
+      <!-- ================= SCENE 9: ALTERNATIVES ================= -->
+      <div class="scene" id="s9">
+        <div class="ghost-word" id="s9-ghost">OPTIONS</div>
+        <div class="hero-glow"></div>
+        <div class="hero">
+          <div class="s9-eyebrow" id="s9-eye">PRICE IT OUT NOW</div>
+          <div class="s9-row" id="s9-r1"><div class="name">CURSOR PRO</div><div class="price">$20</div></div>
+          <div class="s9-row" id="s9-r2"><div class="name">COPILOT</div><div class="price">$39</div></div>
+          <div class="s9-row last" id="s9-r3"><div class="name">CLAUDE MAX</div><div class="price">$100</div></div>
+        </div>
+      </div>
+
+      <!-- ================= SCENE 10: FOLLOW FOR MORE ================= -->
+      <div class="scene" id="s10">
+        <div class="ghost-word" id="s10-ghost">FIN</div>
+        <div class="hero-glow"></div>
+        <div class="hero">
+          <div class="s10-eyebrow" id="s10-eye">RECEIPTS FILED</div>
+          <div class="s10-head" id="s10-head">Follow for <span class="more">more<span class="s10-under" id="s10-under"></span></span></div>
+          <div class="ig-card" id="s10-ig">
+            <span class="at">@hyperframes</span>
+            <span class="label">ON INSTAGRAM</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Caption band (burned-in subtitles) -->
+      <div class="caption-band" id="caption-band"></div>
+
+      <!-- Grain overlay (on top) -->
+      <div class="grain"></div>
+
+      <audio
+        id="narration"
+        data-start="0"
+        data-duration="29.24"
+        data-track-index="2"
+        src="narration.wav"
+        data-volume="1"
+      ></audio>
+
+      <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+      <script>
+        (function () {
+          window.__timelines = window.__timelines || {};
+          const tl = gsap.timeline({ paused: true });
+
+          // ============ SCENE TIMINGS ============
+          const SCENES = {
+            s1: [0.00, 3.95],
+            s2: [3.95, 6.07],
+            s3: [6.07, 8.28],
+            s4: [8.28, 10.24],
+            s5: [10.24, 11.99],
+            s6: [11.99, 16.47],
+            s7: [16.47, 20.46],
+            s8: [20.46, 24.99],
+            s9: [24.99, 28.69],
+            s10:[28.69, 32.24],
+          };
+
+          // Show/hide scenes (hard page-cut). s10 stays visible till end.
+          Object.keys(SCENES).forEach(function (k) {
+            var s = SCENES[k];
+            tl.set("#" + k, { opacity: 1, visibility: "visible" }, s[0]);
+            if (k !== "s10") {
+              tl.set("#" + k, { opacity: 0, visibility: "hidden" }, s[1]);
+            }
+          });
+
+          // Ambient: ghost words slow drift per scene
+          Object.keys(SCENES).forEach(function (k) {
+            var s = SCENES[k];
+            tl.fromTo("#" + k + "-ghost",
+              { y: 0 },
+              { y: 12, duration: (s[1]-s[0]), ease: "sine.inOut" },
+              s[0]);
+          });
+
+          // Hero-glow subtle pulse each scene
+          Object.keys(SCENES).forEach(function (k) {
+            var s = SCENES[k];
+            var dur = s[1]-s[0];
+            tl.fromTo("#" + k + " .hero-glow",
+              { opacity: 0.7 },
+              { opacity: 1, duration: dur, ease: "sine.inOut" },
+              s[0]);
+          });
+
+          // ============ SCENE 1: YANK ============
+          var s1a = SCENES.s1[0];
+          tl.from("#s1 .file-meta", { opacity: 0, duration: 0.4, ease: "power2.out" }, s1a + 0.05);
+          tl.from("#s1 .crop", { opacity: 0, duration: 0.4, ease: "power2.out", stagger: 0.04 }, s1a + 0.05);
+          tl.from("#s1-eye", { y: -20, opacity: 0, duration: 0.36, ease: "power4.out" }, s1a + 0.12);
+          tl.from("#s1-w", { y: 40, opacity: 0, duration: 0.48, ease: "power4.out" }, s1a + 0.24);
+          tl.from("#s1-sub", { y: 20, opacity: 0, duration: 0.42, ease: "power3.out" }, s1a + 0.55);
+          // Strikethrough sweeps on "yank" word (1.56)
+          tl.to("#s1-strike", { scaleX: 1, duration: 0.22, ease: "steps(6)" }, 1.56);
+
+          // ============ SCENE 2 ============
+          var s2a = SCENES.s2[0];
+          tl.from("#s2-eye", { y: -16, opacity: 0, duration: 0.34, ease: "power4.out" }, s2a + 0.05);
+          tl.from("#s2-head", { y: 60, opacity: 0, duration: 0.48, ease: "power4.out" }, s2a + 0.22);
+          tl.fromTo("#s2-rule", { width: 0 }, { width: 180, duration: 0.32, ease: "power3.out" }, s2a + 0.58);
+
+          // ============ SCENE 3: 900,000 ============
+          var s3a = SCENES.s3[0];
+          var counter = { v: 0 };
+          tl.set("#s3-num", { innerText: "0" }, s3a);
+          tl.from("#s3-num", { scale: 0.92, opacity: 0, duration: 0.32, ease: "power3.out" }, s3a + 0.05);
+          tl.to(counter, {
+            v: 900000,
+            duration: 0.95,
+            ease: "expo.out",
+            onUpdate: function () {
+              var el = document.getElementById("s3-num");
+              if (!el) return;
+              var n = Math.round(counter.v);
+              el.textContent = n.toLocaleString("en-US");
+            }
+          }, s3a + 0.15);
+          tl.set("#s3-num", { innerText: "900,000" }, s3a + 1.12);
+          tl.from("#s3-lab", { y: 20, opacity: 0, duration: 0.32, ease: "power3.out" }, s3a + 1.20);
+
+          // ============ SCENE 4 ============
+          var s4a = SCENES.s4[0];
+          tl.from("#s4 .file-meta", { opacity: 0, duration: 0.35, ease: "power2.out" }, s4a + 0.04);
+          tl.from("#s4 .crop", { opacity: 0, duration: 0.35, ease: "power2.out", stagger: 0.04 }, s4a + 0.05);
+          tl.from("#s4-src", { y: -14, opacity: 0, duration: 0.3, ease: "power3.out" }, s4a + 0.10);
+          tl.from("#s4-chip", { y: 30, scale: 0.96, opacity: 0, duration: 0.42, ease: "power4.out" }, s4a + 0.24);
+          tl.from("#s4-sub", { y: 14, opacity: 0, duration: 0.36, ease: "power3.out" }, s4a + 0.62);
+
+          // ============ SCENE 5 ============
+          var s5a = SCENES.s5[0];
+          tl.from("#s5-eye", { y: -14, opacity: 0, duration: 0.32, ease: "power4.out" }, s5a + 0.05);
+          tl.from("#s5-head", { y: 50, opacity: 0, duration: 0.5, ease: "power4.out" }, s5a + 0.20);
+
+          // ============ SCENE 6: QUOTE ============
+          var s6a = SCENES.s6[0];
+          tl.from("#s6-quote", { y: 30, opacity: 0, duration: 0.55, ease: "power3.out" }, s6a + 0.12);
+          tl.from("#s6-attr", { y: 20, opacity: 0, duration: 0.45, ease: "power3.out" }, s6a + 0.60);
+
+          // ============ SCENE 7: URL DIFF ============
+          var s7a = SCENES.s7[0];
+          tl.from("#s7 .file-meta", { opacity: 0, duration: 0.35, ease: "power2.out" }, s7a + 0.04);
+          tl.from("#s7 .crop", { opacity: 0, duration: 0.35, ease: "power2.out", stagger: 0.04 }, s7a + 0.05);
+          tl.from("#s7-eye", { y: -14, opacity: 0, duration: 0.3, ease: "power3.out" }, s7a + 0.10);
+          tl.from("#s7-minus", { x: -20, opacity: 0, duration: 0.4, ease: "power4.out" }, s7a + 0.28);
+          tl.to("#s7-strike", { scaleX: 1, duration: 0.32, ease: "steps(6)" }, s7a + 0.85);
+          tl.from("#s7-plus", { x: -20, opacity: 0, duration: 0.4, ease: "power4.out" }, s7a + 1.30);
+          tl.from("#s7-meta", { y: 14, opacity: 0, duration: 0.35, ease: "power3.out" }, s7a + 1.70);
+
+          // ============ SCENE 8: $100 ============
+          var s8a = SCENES.s8[0];
+          tl.from("#s8-eye", { y: -14, opacity: 0, duration: 0.3, ease: "power3.out" }, s8a + 0.05);
+          tl.from("#s8-num", { y: 40, scale: 0.96, opacity: 0, duration: 0.5, ease: "power4.out" }, s8a + 0.22);
+          tl.fromTo("#s8-under", { scaleX: 0 }, { scaleX: 1, duration: 0.3, ease: "power3.out" }, s8a + 0.70);
+          tl.from("#s8-lab", { y: 16, opacity: 0, duration: 0.35, ease: "power3.out" }, s8a + 0.88);
+
+          // ============ SCENE 9: ALTERNATIVES ============
+          var s9a = SCENES.s9[0];
+          tl.from("#s9-eye", { y: -14, opacity: 0, duration: 0.3, ease: "power3.out" }, s9a + 0.05);
+          tl.from("#s9-r1", { x: -30, opacity: 0, duration: 0.38, ease: "power4.out" }, s9a + 0.22);
+          tl.from("#s9-r2", { x: -30, opacity: 0, duration: 0.38, ease: "power4.out" }, s9a + 0.46);
+          tl.from("#s9-r3", { x: -30, opacity: 0, duration: 0.38, ease: "power4.out" }, s9a + 0.70);
+
+          // ============ SCENE 10: FOLLOW FOR MORE ============
+          var s10a = SCENES.s10[0];
+          tl.from("#s10-eye", { y: -14, opacity: 0, duration: 0.3, ease: "power3.out" }, s10a + 0.05);
+          tl.from("#s10-head", { y: 30, opacity: 0, duration: 0.5, ease: "power4.out" }, s10a + 0.18);
+          tl.fromTo("#s10-under", { scaleX: 0 }, { scaleX: 1, duration: 0.22, ease: "power3.out" }, s10a + 0.55);
+          tl.from("#s10-ig", { y: 24, opacity: 0, duration: 0.44, ease: "power4.out" }, s10a + 0.80);
+
+          // ============ CAPTIONS (word-synced karaoke) ============
+          var TRANSCRIPT = [
+            {"text":"Anthropic","start":0.02,"end":0.45},
+            {"text":"just","start":0.54,"end":0.74},
+            {"text":"tried","start":0.77,"end":0.99},
+            {"text":"to","start":1.06,"end":1.15},
+            {"text":"quietly","start":1.15,"end":1.56},
+            {"text":"yank","start":1.56,"end":1.74},
+            {"text":"Claude","start":1.92,"end":2.17},
+            {"text":"Code","start":2.24,"end":2.41},
+            {"text":"from","start":2.52,"end":2.6},
+            {"text":"the","start":2.6,"end":2.74},
+            {"text":"$20","start":2.78,"end":3.19},
+            {"text":"Pro","start":3.27,"end":3.46},
+            {"text":"plan","start":3.53,"end":3.88},
+            {"text":"and","start":3.95,"end":4.0},
+            {"text":"developers","start":4.0,"end":4.5},
+            {"text":"noticed","start":4.52,"end":5.23},
+            {"text":"fast.","start":5.27,"end":6.04},
+            {"text":"One","start":6.07,"end":6.16},
+            {"text":"tweet","start":6.23,"end":6.36},
+            {"text":"hit","start":6.44,"end":6.49},
+            {"text":"900,000","start":6.57,"end":7.51},
+            {"text":"views","start":7.51,"end":7.75},
+            {"text":"in","start":7.75,"end":7.78},
+            {"text":"hours,","start":7.96,"end":8.12},
+            {"text":"GitHub","start":8.28,"end":8.45},
+            {"text":"issues","start":8.56,"end":8.88},
+            {"text":"called","start":8.88,"end":9.2},
+            {"text":"it","start":9.2,"end":9.23},
+            {"text":"a","start":9.23,"end":9.37},
+            {"text":"breaking","start":9.37,"end":9.78},
+            {"text":"change,","start":9.78,"end":10.24},
+            {"text":"and","start":10.24,"end":10.36},
+            {"text":"Anthropic","start":10.43,"end":10.77},
+            {"text":"walked","start":10.8,"end":11.23},
+            {"text":"it","start":11.31,"end":11.4},
+            {"text":"back.","start":11.4,"end":11.96},
+            {"text":"Their","start":11.99,"end":12.26},
+            {"text":"VP","start":12.26,"end":12.38},
+            {"text":"admitted","start":12.38,"end":12.86},
+            {"text":"current","start":12.86,"end":13.28},
+            {"text":"plans","start":13.28,"end":13.58},
+            {"text":"weren't","start":13.58,"end":14.0},
+            {"text":"built","start":14.0,"end":14.3},
+            {"text":"for","start":14.3,"end":14.37},
+            {"text":"agentic","start":14.48,"end":14.9},
+            {"text":"workloads","start":14.9,"end":15.42},
+            {"text":"this","start":15.49,"end":15.68},
+            {"text":"expensive.","start":15.68,"end":16.44},
+            {"text":"They're","start":16.47,"end":16.76},
+            {"text":"framing","start":16.84,"end":17.18},
+            {"text":"it","start":17.21,"end":17.32},
+            {"text":"as","start":17.32,"end":17.43},
+            {"text":"a","start":17.43,"end":17.5},
+            {"text":"2%","start":17.5,"end":17.69},
+            {"text":"A/B test","start":17.69,"end":18.01},
+            {"text":"but","start":18.01,"end":18.17},
+            {"text":"the","start":18.17,"end":18.18},
+            {"text":"support","start":18.36,"end":18.72},
+            {"text":"docs","start":18.72,"end":18.85},
+            {"text":"were","start":18.96,"end":19.15},
+            {"text":"rewritten","start":19.18,"end":19.63},
+            {"text":"site-wide.","start":19.71,"end":20.44},
+            {"text":"Translation,","start":20.46,"end":21.32},
+            {"text":"Claude","start":21.32,"end":21.73},
+            {"text":"Code","start":21.73,"end":22.0},
+            {"text":"is","start":22.0,"end":22.13},
+            {"text":"likely","start":22.13,"end":22.52},
+            {"text":"moving","start":22.61,"end":22.85},
+            {"text":"to","start":22.96,"end":23.08},
+            {"text":"the","start":23.08,"end":23.28},
+            {"text":"$100","start":23.28,"end":23.89},
+            {"text":"max","start":23.97,"end":24.15},
+            {"text":"tier","start":24.15,"end":24.42},
+            {"text":"soon.","start":24.42,"end":24.95},
+            {"text":"If","start":24.99,"end":25.08},
+            {"text":"you","start":25.15,"end":25.28},
+            {"text":"rely","start":25.36,"end":25.62},
+            {"text":"on","start":25.68,"end":25.78},
+            {"text":"it,","start":25.78,"end":26.03},
+            {"text":"start","start":26.1,"end":26.45},
+            {"text":"pricing","start":26.45,"end":26.97},
+            {"text":"Cursor","start":26.97,"end":27.37},
+            {"text":"and","start":27.48,"end":27.61},
+            {"text":"Copilot","start":27.66,"end":28.14},
+            {"text":"now.","start":28.14,"end":28.66},
+            {"text":"Follow","start":28.69,"end":28.87},
+            {"text":"for","start":28.87,"end":28.97},
+            {"text":"more.","start":28.97,"end":29.24}
+          ];
+
+          // Group words: 3–5 words per group, break on sentence endings or pauses
+          function groupWords(words) {
+            var groups = [];
+            var cur = [];
+            var MAX_WORDS = 5;
+            var MAX_DURATION = 2.2;
+            for (var i = 0; i < words.length; i++) {
+              var w = words[i];
+              cur.push(w);
+              var endsSentence = /[.!?]$/.test(w.text);
+              var endsClause = /,$/.test(w.text);
+              var next = words[i+1];
+              var gap = next ? next.start - w.end : 0;
+              var groupDur = w.end - cur[0].start;
+              var shouldBreak =
+                cur.length >= MAX_WORDS ||
+                groupDur >= MAX_DURATION ||
+                endsSentence ||
+                (endsClause && cur.length >= 3) ||
+                gap > 0.28 ||
+                !next;
+              if (shouldBreak) {
+                groups.push({
+                  start: cur[0].start,
+                  end: w.end,
+                  words: cur.slice()
+                });
+                cur = [];
+              }
+            }
+            return groups;
+          }
+
+          var GROUPS = groupWords(TRANSCRIPT);
+          var band = document.getElementById("caption-band");
+
+          // Build DOM for each group
+          GROUPS.forEach(function (g, gi) {
+            var el = document.createElement("div");
+            el.className = "caption-group";
+            el.id = "cg-" + gi;
+            g.words.forEach(function (w, wi) {
+              var span = document.createElement("span");
+              span.className = "w";
+              span.id = "cg-" + gi + "-w-" + wi;
+              span.textContent = w.text;
+              el.appendChild(span);
+            });
+            band.appendChild(el);
+          });
+
+          // Animate captions
+          GROUPS.forEach(function (g, gi) {
+            var sel = "#cg-" + gi;
+            tl.set(sel, { opacity: 0, visibility: "visible", y: 10 }, Math.max(0, g.start - 0.08));
+            tl.to(sel, { opacity: 1, y: 0, duration: 0.18, ease: "power3.out" }, Math.max(0, g.start - 0.08));
+
+            // Per-word highlight swaps (step function via tl.set)
+            g.words.forEach(function (w, wi) {
+              var wsel = "#cg-" + gi + "-w-" + wi;
+              tl.set(wsel, { color: "#C96F3C" }, w.start);
+              tl.set(wsel, { color: "#F2E6D4" }, w.end);
+            });
+
+            // Exit + hard kill
+            tl.to(sel, { opacity: 0, duration: 0.12, ease: "power2.in" }, g.end - 0.02);
+            tl.set(sel, { opacity: 0, visibility: "hidden" }, g.end + 0.02);
+          });
+
+          // Fade caption band during final IG overlay window
+          tl.to("#caption-band", { opacity: 0, duration: 0.2, ease: "power2.in" }, 29.30);
+          tl.set("#caption-band", { visibility: "hidden" }, 29.55);
+
+          window.__timelines["root"] = tl;
+        })();
+      </script>
+    </div>
+  </body>
+</html>

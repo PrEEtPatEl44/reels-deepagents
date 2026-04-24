@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <style>
+    /* ─── DESIGN TOKENS ──────────────────────────────────────────── */
+    :root {
+      --void:            #0D0D0E;
+      --surface-1:       #141416;
+      --surface-2:       #1C1C1F;
+      --phosphor:        #E8E4DC;
+      --phosphor-dim:    #8A8680;
+      --phosphor-ghost:  #3A3835;
+      --amber-hot:       #F5A623;
+      --amber-dim:       #A06A0F;
+      --kill-red:        #D93025;
+      --diff-green:      #4E9A6B;
+      --mono-surface:    #111214;
+      /* safe zone */
+      --safe-top:        240px;
+      --safe-left:       60px;
+      --safe-right:      900px;
+      --safe-center-x:   480px;
+      --safe-center-y:   820px;
+      /* caption */
+      --caption-band-top: 1240px;
+      --caption-band-width: 780px;
+      /* hero gap */
+      --gap-hero: 44px;
+    }
+
+    /* ─── RESET ─────────────────────────────────────────────────── */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      background: #0D0D0E;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    /* ─── ROOT COMPOSITION ──────────────────────────────────────── */
+    #root {
+      position: relative;
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      background: #0D0D0E;
+    }
+
+    /* ─── GLOBAL AMBIENT ────────────────────────────────────────── */
+    #vignette {
+      position: absolute;
+      top: 0; left: 0;
+      width: 1080px; height: 1920px;
+      background: radial-gradient(ellipse 900px 700px at 50% 25%, rgba(20,20,22,0.28) 0%, rgba(13,13,14,0) 70%);
+      pointer-events: none;
+      z-index: 90;
+    }
+    #grain {
+      position: absolute;
+      top: 0; left: 0;
+      width: 1080px; height: 1920px;
+      pointer-events: none;
+      z-index: 100;
+      opacity: 0.07;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 200px 200px;
+    }
+
+    /* ─── SCENE BASE ────────────────────────────────────────────── */
+    .scene {
+      position: absolute;
+      top: 0; left: 0;
+      width: 1080px; height: 1920px;
+      overflow: hidden;
+      background: #0D0D0E;
+    }
+    /* Scene 5 has slightly different bg */
+    #s5 { background: #111214; }
+
+    /* Scenes 2+ start invisible */
+    #s2,#s3,#s4,#s5,#s6,#s7,#s8,#s9,#s10,#s11 { opacity: 0; }
+
+    /* ─── SAFE-RECT SCENE CONTAINER ─────────────────────────────── */
+    /* Fills the safe rectangle: x:60–900, y:240–1400 */
+    .sc {
+      position: absolute;
+      top: 240px;
+      left: 60px;
+      width: 840px;
+      height: 1160px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 44px;
+    }
+
+    /* ─── FILE-META HEADER ──────────────────────────────────────── */
+    .file-meta {
+      position: absolute;
+      top: 270px;
+      left: 90px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 22px;
+      font-weight: 500;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: #8A8680;
+      white-space: nowrap;
+    }
+
+    /* ─── HAIRLINE RULES ────────────────────────────────────────── */
+    .hairline {
+      position: absolute;
+      left: 60px;
+      width: 840px;
+      height: 1px;
+      background: #1C1C1F;
+    }
+    .hl-top    { top: 700px; }
+    .hl-bottom { top: 940px; }
+
+    /* ─── CROP MARKS ─────────────────────────────────────────────── */
+    .crop-mark {
+      position: absolute;
+      width: 18px; height: 18px;
+      border-color: #3A3835;
+      border-style: solid;
+      border-width: 0;
+    }
+    .cm-tl { top: 240px;  left: 60px;   border-top-width:1px;    border-left-width:1px;  }
+    .cm-tr { top: 240px;  left: 882px;  border-top-width:1px;    border-right-width:1px; }
+    .cm-bl { top: 1382px; left: 60px;   border-bottom-width:1px; border-left-width:1px;  }
+    .cm-br { top: 1382px; left: 882px;  border-bottom-width:1px; border-right-width:1px; }
+
+    /* ─── GHOST WORD ─────────────────────────────────────────────── */
+    .ghost-word {
+      position: absolute;
+      /* Positioned upper-right inside safe zone */
+      top: 290px;
+      /* centered on safe-center-x while clipping right */
+      left: 380px;
+      font-family: 'DM Serif Display', serif;
+      font-size: 300px;
+      font-weight: 400;
+      color: #3A3835;
+      opacity: 0.04;
+      white-space: nowrap;
+      pointer-events: none;
+      /* clip strictly to safe-right */
+      max-width: 520px;
+      overflow: hidden;
+    }
+
+    /* ─── TYPOGRAPHY ─────────────────────────────────────────────── */
+    .t-mega {
+      font-family: 'DM Serif Display', serif;
+      font-size: 160px;
+      font-weight: 400;
+      letter-spacing: -0.03em;
+      line-height: 0.91;
+      color: #E8E4DC;
+      text-align: center;
+    }
+    .t-hero {
+      font-family: 'DM Serif Display', serif;
+      font-size: 118px;
+      font-weight: 400;
+      letter-spacing: -0.025em;
+      line-height: 0.94;
+      color: #E8E4DC;
+      text-align: center;
+      max-width: 760px;
+    }
+    .t-stat {
+      font-family: 'DM Serif Display', serif;
+      font-size: 264px;
+      font-weight: 400;
+      letter-spacing: -0.04em;
+      line-height: 0.88;
+      color: #E8E4DC;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+    .t-stat-label {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 0.10em;
+      line-height: 1.0;
+      color: #8A8680;
+      text-align: center;
+      text-transform: uppercase;
+    }
+    .t-eyebrow {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 30px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      line-height: 1.0;
+      color: #8A8680;
+      text-align: center;
+      text-transform: uppercase;
+    }
+    .t-body {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 44px;
+      font-weight: 500;
+      letter-spacing: 0;
+      line-height: 1.22;
+      color: #E8E4DC;
+      text-align: center;
+      max-width: 760px;
+    }
+    .t-mono {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 34px;
+      font-weight: 400;
+      letter-spacing: 0;
+      line-height: 1.38;
+      color: #E8E4DC;
+    }
+    .t-quote {
+      font-family: 'DM Serif Display', serif;
+      font-size: 66px;
+      font-weight: 400;
+      font-style: italic;
+      letter-spacing: -0.01em;
+      line-height: 1.08;
+      color: #E8E4DC;
+      text-align: center;
+      max-width: 760px;
+    }
+    .t-attribution {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 26px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      line-height: 1.0;
+      color: #8A8680;
+      text-align: center;
+      text-transform: uppercase;
+    }
+    .t-dim   { color: #8A8680; }
+    .t-amber { color: #F5A623; }
+    .t-red   { color: #D93025; }
+    .t-green { color: #4E9A6B; }
+
+    /* ─── STRIKETHROUGH ──────────────────────────────────────────── */
+    .strike-wrap {
+      position: relative;
+      display: inline-block;
+    }
+    .strike-bar {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 100%;
+      height: 6px;
+      background: #D93025;
+      transform: scaleX(0);
+      transform-origin: left center;
+      margin-top: -3px;
+      z-index: 2;
+    }
+    .strike-bar-thin {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: #D93025;
+      transform: scaleX(0);
+      transform-origin: left center;
+      margin-top: -1.5px;
+      z-index: 2;
+    }
+
+    /* ─── STATUS BADGE ───────────────────────────────────────────── */
+    #s1-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: #1C1C1F;
+      border-radius: 100px;
+      padding: 12px 28px;
+    }
+    #s1-badge-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: #4E9A6B;
+      flex-shrink: 0;
+    }
+    #s1-badge-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 30px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: #4E9A6B;
+    }
+
+    /* ─── TERMINAL CURSOR ────────────────────────────────────────── */
+    #s1-cursor {
+      display: inline-block;
+      width: 4px; height: 40px;
+      background: #F5A623;
+      vertical-align: middle;
+      margin-left: 8px;
+    }
+
+    /* ─── MONO EVIDENCE BLOCK ────────────────────────────────────── */
+    .mono-block {
+      background: #111214;
+      border-radius: 6px;
+      padding: 32px 40px;
+      width: 760px;
+    }
+    .url-line {
+      display: flex;
+      align-items: center;
+    }
+    .url-left-bar {
+      width: 4px;
+      height: 46px;
+      background: #4E9A6B;
+      border-radius: 2px;
+      margin-right: 18px;
+      flex-shrink: 0;
+    }
+
+    /* ─── BREAKING CHANGE CHIP ───────────────────────────────────── */
+    #s4-chip {
+      display: flex;
+      align-items: stretch;
+      background: #141416;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    #s4-chip-bar {
+      width: 5px;
+      background: #D93025;
+      flex-shrink: 0;
+    }
+    #s4-chip-inner {
+      padding: 18px 32px;
+    }
+    #s4-chip-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 30px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: #E8E4DC;
+    }
+    #s4-github-url {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 22px;
+      font-weight: 400;
+      color: #3A3835;
+      letter-spacing: 0;
+      text-align: center;
+    }
+
+    /* ─── COMPARISON TABLE ───────────────────────────────────────── */
+    .compare-table {
+      width: 700px;
+    }
+    .compare-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 0;
+    }
+    .compare-divider {
+      width: 100%;
+      height: 1px;
+      background: #1C1C1F;
+    }
+    .compare-label {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 40px;
+      font-weight: 500;
+      color: #8A8680;
+    }
+    .compare-verdict {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 40px;
+      font-weight: 700;
+    }
+    .verdict-real   { color: #4E9A6B; }
+    .verdict-crisis { color: #D93025; }
+
+    /* ─── FOLLOW OVERLAY ─────────────────────────────────────────── */
+    #follow-box {
+      position: absolute;
+      left: 480px;
+      top: 820px;
+      transform: translate(-50%, -50%);
+      background: #141416;
+      border: 1px solid #1C1C1F;
+      border-radius: 12px;
+      padding: 56px 64px;
+      width: 760px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+    #follow-label {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 30px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      color: #8A8680;
+      text-transform: uppercase;
+      text-align: center;
+    }
+    #follow-handle {
+      font-family: 'DM Serif Display', serif;
+      font-size: 88px;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 0.95;
+      color: #E8E4DC;
+      text-align: center;
+    }
+    #follow-sub {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 34px;
+      font-weight: 500;
+      color: #8A8680;
+      text-align: center;
+      line-height: 1.3;
+    }
+
+    /* ─── CAPTION BAND ───────────────────────────────────────────── */
+    #caption-layer {
+      position: absolute;
+      top: 0; left: 0;
+      width: 1080px; height: 1920px;
+      pointer-events: none;
+      z-index: 80;
+    }
+    .cap-group {
+      position: absolute;
+      top: 1240px;
+      left: 480px;
+      transform: translateX(-50%);
+      width: 780px;
+      background: rgba(13,13,14,0.88);
+      border-radius: 8px;
+      padding: 14px 28px;
+      opacity: 0;
+      visibility: hidden;
+      text-align: center;
+    }
+    .cap-word {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 50px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      line-height: 1.18;
+      color: #E8E4DC;
+      display: inline;
+    }
+  </style>
+</head>
+<body>
+  <div
+    id="root"
+    data-composition-id="main"
+    data-width="1080"
+    data-height="1920"
+    data-start="0"
+    data-duration="45.61"
+  >
+
+    <!-- AUDIO -->
+    <audio
+      id="el-audio"
+      data-start="0"
+      data-duration="42.61"
+      data-track-index="2"
+      src="narration.wav"
+      data-volume="1"
+    ></audio>
+
+    <!-- GLOBAL AMBIENT -->
+    <div id="vignette"></div>
+    <div id="grain"></div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         S1 — THE KILL (0–5.7s)
+         Hero: "CLAUDE CODE" + strikethrough + status badge
+    ═══════════════════════════════════════════════════════════ -->
+    <div id="s1" class="scene" style="z-index:1;">
+      <div class="file-meta">INCIDENT · 2026-04-22 · SOURCE: ARS TECHNICA</div>
+      <div class="hairline hl-top"></div>
+      <div class="hairline hl-bottom"></div>
+      <div class="crop-mark cm-tl"></div>
+      <div class="crop-mark cm-tr"></div>
+      <div class="crop-mark cm-bl"></div>
+      <div class="crop-mark cm-br"></div>
+      <div id="s1-ghost" class="ghost-word">REMOVED</div>
+
+      <div class="sc">
+        <div id="s1-eyebrow" class="t-eyebrow">ANTHROPIC PRO PLAN</div>
+
+        <!-- Title row: "CLAUDE CODE" + cursor + strike bar -->
+        <div id="s1-title-row" style="position:relative; display:inline-block; text-align:center;">
+          <span id="s1-title" class="t-mega" style="display:inline;">CLAUDE CODE</span><span id="s1-cursor"></span>
+          <div id="s1-strike" class="strike-bar" style="top:46%;"></div>
+        </div>
+
+        <!-- Status badge -->
+        <div id="s1-badge">
+          <div id="s1-badge-dot"></div>
+          <div id="s1-badge-text">ACTIVE</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         S2 — BACKLASH (5.7–8.3s)
+    ═══════════════════════════════════════════════════════════ -->
+    <div id="s2" class="scene" style="z-index:2;">
+      <div class="hairline hl-top"></div>
+      <div class="hairline hl-bottom"></div>
+      <div id="s2-ghost" class="ghost-word">BACKLASH</div>
+
+      <div class="sc">
+        <div id="s2-eyebrow" class="t-eyebrow">DEVELOPER BACKLASH</div>
+        <div id="s2-hero" class="t-hero" style="text-align:center;">Immediate.</div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         S3 — 900,000 VIEWS (8.3–11.0s)
+    ═══════════════════════════════════════════════════════════ -->
+    <div id="s3" class="scene" style="z-index:3;">
+      <div class="hairline hl-top"></div>
+      <div class="hairline hl-bottom"></div>
+      <div id="s3-ghost" class="ghost-word">VIRAL</div>
+
+      <div class="sc">
+        <div id="s3-number" class="t-stat">0</div>
+        <div id="s3-label" class="t-stat-label">TWEET VIEWS · WITHIN HOURS</div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         S4 — BREAKING CHANGE (11.0–13.2s)
+    ═══════════════════════════════════════════════════════════ -->
+    <div id="s4" class="scene" style="z-index:4;">
+      <div class="file-meta">INCIDENT · 2026-04-22 · SOURCE: ARS TECHNICA</div>
+      <div class="hairline hl-top"></div>
+      <div class="hairline hl-bottom"></div>
+      <div class="crop-mark cm-tl"></div>
+      <div class="crop-mark cm-tr"></div>
+      <div class="crop-mark cm-bl"></div>
+      <div class="crop-mark cm-br"></div>
+      <div id="s4-ghost" class="ghost-word">BREAKING</div>
+
+      <div class="sc">
+        <div id="s4-chip">
+          <div id="s4-chip-bar"></div>
+          <div id="s4-chip-inner">
+            <div id="s4-chip-text">BREAKING CHANGE</div>
+          </div>
+        </div>
+        <div id="s4-github-url">github.com/anthropics/claude-code/issues</div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         S5 — URL DIFF / A-B LIE (13.2–21.0s)
+    ═══════════════════════════════════════════════════════════ -->
+    <div id="s5" class="scene" style="z-index:5;">
+      <div class="file-meta">INCIDENT · 2026-04-22 · SOURCE: ARS TECHNICA</div>
+      <div class="hairline hl-top"></div>
+      <div class="hairline hl-bottom"></div>
+      <div class="crop-mark cm-tl"></div>
+      <div class="crop-mark cm-tr"></div>
+      <div class="crop-mark cm-bl"></div>
+      <div class="crop-mark cm-br"></div>
+      <div id="s5-ghost" class="ghost-word">DOCS</div>
+
+      <div class="sc" style="gap:36px;">
+        <div id="s5-eyebrow" class="t-eyebrow">SUPPORT DOCS REWRITTEN</div>
+        <div id="s5-mono-block" class="mono-block">
+          <!-- Line 1: original (struck) -->
+          <div id="s5-line1" class="url-line" style="margin-bottom:22px; position:relative;">
+            <div style="position:relative; width:100%;">
+              <div class="t-mono">.../pro-or-max-plan</div>
+              <div id="s5-strike1" class="strike-bar-thin"></div>
+            </div>
+          </div>
+          <!-- Line 2: new URL with diff-green bar (hidden until strike fires) -->
+          <div id="s5-line2" class="url-line" style="opacity:0;">
+            <div id="s5-green-bar" class="url-left-bar"></div>
+            <div class="t-mono">.../max-plan</div>
+          </div>
+        </div>
+        <div id="s5-body" class="t-body" style="font-size:38px; opacity:0;">
+          As if the change was permanent.
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         S6 — VP QUOTE (21.0–26.5s)
+         Resequenced: VP quote before "REVERSED" per DESIGN.md
+    ═══════════════════════════════════════════════════════════ -->
+    <div id="s6" class="scene" style="z-index:6;">
+      <div class="hairline hl-top"></div>
+      <div class="hairline hl-bottom"></div>
+      <div id="s6-ghost" class="ghost-word">ADMITTED</div>
+
+      <div class="sc" style="gap:28px; padding:0 30px;">
+        <div id="s6-quote" class="t-quote">"our current plans weren't built for this."</div>
+        <div id="s6-attr" class="t-attribution">— MADHAV AVASARE, VP PRODUCT</div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         S7 — REVERSED (26.5–30.2s)
+    ═══════════════════════════════════════════════════════════ -->
+    <div id="s7" class="scene" style="z-index:7;">
+      <div class="hairline hl-top"></div>
+      <div class="hairline hl-bottom"></div>
+      <div id="s7-ghost" class="ghost-word">REVERSED</div>
+
+      <div class="sc">
+        <div id="s7-hero" class="t-mega">REVERSED.</div>
+        <div id="s7-sub" class="t-body t-dim" style="font-size:40px;">economics unchanged</div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         S8 — PRICE ESCALATION (30.2–34.9s)
+         $20 struck → $100 amber
+    ═══════════════════════════════════════════════════════════ -->
+    <div id="s8" class="scene" style="z-index:8;">
+      <div class="file-meta">INCIDENT · 2026-04-22 · SOURCE: ARS TECHNICA</div>
+      <div class="hairline hl-top"></div>
+      <div class="hairline hl-bottom"></div>
+      <div class="crop-mark cm-tl"></div>
+      <div class="crop-mark cm-tr"></div>
+      <div class="crop-mark cm-bl"></div>
+      <div class="crop-mark cm-br"></div>
+      <div id="s8-ghost" class="ghost-word">PRICE</div>
+
+      <div class="sc" style="gap:20px;">
+        <div id="s8-old-wrap" style="position:relative; display:inline-block;">
+          <div id="s8-old" class="t-stat t-dim">$20</div>
+          <div id="s8-strike" class="strike-bar" style="height:7px; margin-top:-3.5px;"></div>
+        </div>
+        <div id="s8-new" class="t-stat t-amber" style="opacity:0;">$100</div>
+        <div id="s8-label" class="t-stat-label" style="opacity:0;">CURSOR PRO $20 / CLAUDE MAX $100</div>
+        <div id="s8-mult" class="t-eyebrow" style="opacity:0;">5× CURSOR PRO</div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         S9 — TRUST CRISIS (34.9–38.1s)
+    ═══════════════════════════════════════════════════════════ -->
+    <div id="s9" class="scene" style="z-index:9;">
+      <div class="hairline hl-top"></div>
+      <div class="hairline hl-bottom"></div>
+      <div id="s9-ghost" class="ghost-word">CRISIS</div>
+
+      <div class="sc">
+        <div id="s9-table" class="compare-table">
+          <div id="s9-row1" class="compare-row" style="opacity:0;">
+            <div class="compare-label">BUSINESS CASE</div>
+            <div class="compare-verdict verdict-real">✓ REAL</div>
+          </div>
+          <div id="s9-div" class="compare-divider" style="opacity:0;"></div>
+          <div id="s9-row2" class="compare-row" style="opacity:0;">
+            <div class="compare-label">EXECUTION</div>
+            <div class="compare-verdict verdict-crisis">✗ TRUST CRISIS</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         S10 — EVALUATE / CTA (38.1–42.61s)
+    ═══════════════════════════════════════════════════════════ -->
+    <div id="s10" class="scene" style="z-index:10;">
+      <div class="file-meta">INCIDENT · 2026-04-22 · SOURCE: ARS TECHNICA</div>
+      <div class="hairline hl-top"></div>
+      <div class="hairline hl-bottom"></div>
+      <div class="crop-mark cm-tl"></div>
+      <div class="crop-mark cm-tr"></div>
+      <div class="crop-mark cm-bl"></div>
+      <div class="crop-mark cm-br"></div>
+      <div id="s10-ghost" class="ghost-word">NOW</div>
+
+      <div class="sc" style="gap:36px;">
+        <div id="s10-eyebrow" class="t-eyebrow">DEVELOPERS</div>
+        <div id="s10-hero" class="t-hero">EVALUATE YOUR TOOLCHAIN NOW</div>
+        <!-- Underline under NOW — drawn by scaleX 0→1 -->
+        <div id="s10-uline-wrap" style="width:230px; height:4px; position:relative;">
+          <div id="s10-uline" style="
+            position:absolute; top:0; left:0;
+            width:100%; height:3px;
+            background:#D93025;
+            transform:scaleX(0);
+            transform-origin:left center;
+          "></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         S11 — INSTAGRAM FOLLOW OVERLAY (42.61–45.61s)
+    ═══════════════════════════════════════════════════════════ -->
+    <div id="s11" class="scene" style="z-index:11;">
+      <div class="hairline hl-top"></div>
+      <div class="hairline hl-bottom"></div>
+
+      <div id="follow-box">
+        <div id="follow-label">For more dev news</div>
+        <div id="follow-handle">@yourhandle</div>
+        <div id="follow-sub">Follow before Anthropic<br>makes the next move.</div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         CAPTION LAYER
+    ═══════════════════════════════════════════════════════════ -->
+    <div id="caption-layer"></div>
+
+  </div><!-- /#root -->
+
+  <script>
+  window.__timelines = window.__timelines || {};
+
+  // ──────────────────────────────────────────────────────────────
+  // WORD TRANSCRIPT
+  // ──────────────────────────────────────────────────────────────
+  var WORDS = [
+    {t:"Anthropic",s:0.02,e:0.43},
+    {t:"briefly",s:0.6,e:0.93},
+    {t:"removed",s:0.93,e:1.2},
+    {t:"Claude",s:1.36,e:1.68},
+    {t:"Code",s:1.74,e:1.91},
+    {t:"from",s:2.02,e:2.19},
+    {t:"its",s:2.24,e:2.39},
+    {t:"$20-a-month",s:2.41,e:3.31},
+    {t:"pro",s:3.38,e:3.56},
+    {t:"plan,",s:3.56,e:3.95},
+    {t:"and",s:3.95,e:4.06},
+    {t:"the",s:4.06,e:4.17},
+    {t:"backlash",s:4.17,e:4.49},
+    {t:"was",s:4.53,e:4.77},
+    {t:"immediate.",s:4.77,e:5.7},
+    {t:"One",s:5.91,e:6.06},
+    {t:"developer's",s:6.06,e:6.75},
+    {t:"tweet",s:6.75,e:7.06},
+    {t:"documenting",s:7.06,e:7.75},
+    {t:"the",s:7.75,e:7.94},
+    {t:"change",s:7.94,e:8.3},
+    {t:"hit",s:8.33,e:8.5},
+    {t:"900,000",s:8.5,e:9.59},
+    {t:"views",s:9.82,e:10.05},
+    {t:"within",s:10.05,e:10.42},
+    {t:"hours.",s:10.42,e:11},
+    {t:"GitHub",s:11.03,e:11.31},
+    {t:"issues",s:11.38,e:11.68},
+    {t:"called",s:11.68,e:12.02},
+    {t:"it",s:12.02,e:12.13},
+    {t:"a",s:12.13,e:12.18},
+    {t:"breaking",s:12.18,e:12.58},
+    {t:"change.",s:12.67,e:13.19},
+    {t:"Anthropic",s:13.22,e:13.63},
+    {t:"tried",s:13.8,e:14.05},
+    {t:"to",s:14.05,e:14.17},
+    {t:"frame",s:14.17,e:14.4},
+    {t:"it",s:14.47,e:14.56},
+    {t:"as",s:14.62,e:14.71},
+    {t:"a",s:14.71,e:14.77},
+    {t:"small",s:14.77,e:15.07},
+    {t:"A-B",s:15.07,e:15.25},
+    {t:"test",s:15.25,e:15.47},
+    {t:"affecting",s:15.51,e:16.04},
+    {t:"just",s:16.04,e:16.23},
+    {t:"2%",s:16.33,e:16.51},
+    {t:"of",s:16.58,e:16.6},
+    {t:"new",s:16.64,e:16.82},
+    {t:"signups,",s:16.82,e:17.36},
+    {t:"but",s:17.36,e:17.64},
+    {t:"site-wide",s:17.67,e:18.07},
+    {t:"support",s:18.24,e:18.52},
+    {t:"docs",s:18.52,e:18.74},
+    {t:"were",s:18.74,e:18.91},
+    {t:"rewritten",s:19,e:19.46},
+    {t:"as",s:19.46,e:19.55},
+    {t:"if",s:19.66,e:19.68},
+    {t:"the",s:19.68,e:19.83},
+    {t:"change",s:19.88,e:20.14},
+    {t:"was",s:20.17,e:20.33},
+    {t:"permanent.",s:20.33,e:21.03},
+    {t:"The",s:21.07,e:21.16},
+    {t:"company's",s:21.22,e:21.64},
+    {t:"own",s:21.64,e:21.75},
+    {t:"VP",s:21.85,e:21.89},
+    {t:"of",s:21.89,e:21.99},
+    {t:"Product",s:21.99,e:22.24},
+    {t:"admitted",s:22.4,e:22.72},
+    {t:"their",s:22.78,e:22.95},
+    {t:"current",s:23.06,e:23.35},
+    {t:"plans",s:23.35,e:23.6},
+    {t:"were",s:23.6,e:23.8},
+    {t:"never",s:23.8,e:24.03},
+    {t:"built",s:24.07,e:24.3},
+    {t:"for",s:24.3,e:24.44},
+    {t:"Claude",s:24.44,e:24.75},
+    {t:"Code's",s:24.87,e:25.26},
+    {t:"compute",s:25.26,e:25.75},
+    {t:"demands.",s:25.75,e:26.42},
+    {t:"They",s:26.49,e:26.66},
+    {t:"reversed",s:26.66,e:27.07},
+    {t:"course",s:27.07,e:27.37},
+    {t:"under",s:27.37,e:27.62},
+    {t:"pressure,",s:27.62,e:28.03},
+    {t:"but",s:28.13,e:28.28},
+    {t:"the",s:28.28,e:28.37},
+    {t:"underlying",s:28.48,e:28.94},
+    {t:"economics",s:28.94,e:29.4},
+    {t:"haven't",s:29.4,e:29.75},
+    {t:"changed.",s:29.75,e:30.17},
+    {t:"At",s:30.34,e:30.43},
+    {t:"$100-a-month",s:30.43,e:31.39},
+    {t:"on",s:31.39,e:31.5},
+    {t:"the",s:31.5,e:31.59},
+    {t:"MAX",s:31.68,e:31.82},
+    {t:"plan,",s:31.82,e:32.15},
+    {t:"Claude",s:32.15,e:32.44},
+    {t:"Code",s:32.48,e:32.7},
+    {t:"would",s:32.7,e:32.97},
+    {t:"cost",s:32.97,e:33.19},
+    {t:"five",s:33.19,e:33.35},
+    {t:"times",s:33.45,e:33.63},
+    {t:"more",s:33.7,e:33.9},
+    {t:"than",s:33.9,e:34.03},
+    {t:"Cursor",s:34.17,e:34.41},
+    {t:"Pro.",s:34.46,e:34.86},
+    {t:"The",s:34.91,e:35},
+    {t:"business",s:35.06,e:35.31},
+    {t:"case",s:35.48,e:35.59},
+    {t:"was",s:35.69,e:35.84},
+    {t:"real.",s:35.84,e:36.15},
+    {t:"The",s:36.27,e:36.36},
+    {t:"execution",s:36.42,e:36.95},
+    {t:"was",s:37.05,e:37.16},
+    {t:"a",s:37.16,e:37.22},
+    {t:"trust",s:37.22,e:37.44},
+    {t:"crisis.",s:37.53,e:38.12},
+    {t:"Developers,",s:38.14,e:38.76},
+    {t:"start",s:38.76,e:39.03},
+    {t:"evaluating",s:39.03,e:39.57},
+    {t:"your",s:39.57,e:39.7},
+    {t:"backup",s:39.79,e:40.03},
+    {t:"toolchain",s:40.14,e:40.58},
+    {t:"now",s:40.58,e:40.74},
+    {t:"before",s:40.74,e:41.06},
+    {t:"Anthropic",s:41.06,e:41.52},
+    {t:"makes",s:41.56,e:41.81},
+    {t:"the",s:41.81,e:41.83},
+    {t:"next",s:42.06,e:42.18},
+    {t:"move.",s:42.18,e:42.61}
+  ];
+
+  // ──────────────────────────────────────────────────────────────
+  // BUILD CAPTION GROUPS
+  // ~4-5 words per group, break at sentence-end or long pause
+  // ──────────────────────────────────────────────────────────────
+  function buildGroups(words) {
+    var groups = [];
+    var cur = [];
+    var MAX = 5;
+    for (var i = 0; i < words.length; i++) {
+      var w = words[i];
+      cur.push(w);
+      var sentEnd = /[.!?,]$/.test(w.t.trim());
+      var next = words[i + 1];
+      var longPause = next && (next.s - w.e) > 0.20;
+      var atMax = cur.length >= MAX;
+      if (sentEnd || longPause || atMax || i === words.length - 1) {
+        var gs = cur[0].s;
+        var ge = next ? Math.min(cur[cur.length-1].e + 0.35, next.s - 0.02) : cur[cur.length-1].e + 0.35;
+        ge = Math.min(ge, 42.61);
+        groups.push({ words: cur.slice(), start: gs, end: ge });
+        cur = [];
+      }
+    }
+    return groups;
+  }
+
+  var GROUPS = buildGroups(WORDS);
+
+  // Build DOM for caption groups
+  var captionLayer = document.getElementById('caption-layer');
+  GROUPS.forEach(function(g, gi) {
+    var el = document.createElement('div');
+    el.className = 'cap-group';
+    el.id = 'cg-' + gi;
+    var html = '';
+    g.words.forEach(function(w, wi) {
+      if (wi > 0) html += '<span class="cap-word"> </span>';
+      html += '<span class="cap-word" id="cw-' + gi + '-' + wi + '">' + w.t + '</span>';
+    });
+    el.innerHTML = html;
+    captionLayer.appendChild(el);
+  });
+
+  // ──────────────────────────────────────────────────────────────
+  // MAIN TIMELINE
+  // ──────────────────────────────────────────────────────────────
+  var tl = gsap.timeline({ paused: true });
+
+  // ─── Seeded counter object for 900k count-up ─────────────────
+  var ctr = { val: 0 };
+
+  // ─── Ghost repeat count (finite) ─────────────────────────────
+  var TOTAL = 45.61;
+  var GDUR  = 9;
+  var GREP  = Math.ceil(TOTAL / GDUR); // enough cycles to last full video
+
+  // ══════════════════════════════════════════════════════════════
+  // SCENE 1 (0–5.7s)
+  // ══════════════════════════════════════════════════════════════
+  tl.from('#s1 .file-meta',   { opacity:0, duration:0.28, ease:'power4.out' }, 0.1);
+  tl.from('#s1 .hairline',    { scaleX:0, transformOrigin:'left center', duration:0.3, ease:'power4.out', stagger:0.05 }, 0.05);
+  tl.from('#s1 .crop-mark',   { opacity:0, duration:0.2, ease:'power4.out', stagger:0.04 }, 0.12);
+  tl.from('#s1-ghost',        { opacity:0, duration:0.5, ease:'power2.out' }, 0.1);
+  tl.to(  '#s1-ghost',        { y:-10, duration:GDUR, ease:'sine.inOut', repeat:GREP, yoyo:true }, 0.1);
+  tl.from('#s1-eyebrow',      { y:20, opacity:0, duration:0.28, ease:'power4.out' }, 0.2);
+  tl.from('#s1-title-row',    { y:36, opacity:0, duration:0.44, ease:'power4.out' }, 0.32);
+  tl.from('#s1-badge',        { y:20, opacity:0, duration:0.28, ease:'power4.out' }, 0.5);
+
+  // Cursor blink (steps, finite)
+  tl.to('#s1-cursor', { opacity:0, duration:0.25, ease:'steps(1)', repeat:22, yoyo:true }, 0.35);
+
+  // At t=0.93 (word "removed") — strike + badge flip
+  tl.to(  '#s1-strike',     { scaleX:1, duration:0.24, ease:'steps(8)' }, 0.93);
+  tl.set( '#s1-cursor',     { opacity:0 }, 0.93);
+  tl.set( '#s1-badge-dot',  { backgroundColor:'#D93025' }, 0.93);
+  tl.set( '#s1-badge-text', { color:'#D93025' }, 0.93);
+  // Change badge label text via onStart callback (GSAP-safe)
+  tl.add(function() {
+    var bt = document.getElementById('s1-badge-text');
+    if (bt) bt.textContent = 'REMOVED';
+  }, 0.93);
+
+  // ─── TRANSITION S1→S2 at 5.7s ────────────────────────────────
+  tl.to(    '#s1', { opacity:0, duration:0.18, ease:'power2.inOut' }, 5.7);
+  tl.fromTo('#s2', { opacity:0 }, { opacity:1, duration:0.18, ease:'power2.inOut' }, 5.73);
+
+  // ══════════════════════════════════════════════════════════════
+  // SCENE 2 (5.7–8.3s)
+  // ══════════════════════════════════════════════════════════════
+  tl.from('#s2 .hairline', { scaleX:0, transformOrigin:'left center', duration:0.28, ease:'power4.out', stagger:0.05 }, 5.78);
+  tl.from('#s2-ghost',     { opacity:0, duration:0.4, ease:'power2.out' }, 5.78);
+  tl.to(  '#s2-ghost',     { y:-10, duration:GDUR, ease:'sine.inOut', repeat:GREP, yoyo:true }, 5.78);
+  tl.from('#s2-eyebrow',   { y:18, opacity:0, duration:0.28, ease:'power4.out' }, 5.9);
+  tl.from('#s2-hero',      { y:40, opacity:0, duration:0.44, ease:'power4.out' }, 6.05);
+
+  // ─── TRANSITION S2→S3 at 8.3s ────────────────────────────────
+  tl.to(    '#s2', { opacity:0, duration:0.18, ease:'power2.inOut' }, 8.3);
+  tl.fromTo('#s3', { opacity:0 }, { opacity:1, duration:0.18, ease:'power2.inOut' }, 8.33);
+
+  // ══════════════════════════════════════════════════════════════
+  // SCENE 3 (8.3–11.0s) — 900,000 counter
+  // ══════════════════════════════════════════════════════════════
+  tl.from('#s3 .hairline', { scaleX:0, transformOrigin:'left center', duration:0.28, ease:'power4.out', stagger:0.05 }, 8.38);
+  tl.from('#s3-ghost',     { opacity:0, duration:0.4, ease:'power2.out' }, 8.38);
+  tl.to(  '#s3-ghost',     { y:-10, duration:GDUR, ease:'sine.inOut', repeat:GREP, yoyo:true }, 8.38);
+
+  // Number hidden until "900,000" word at 8.5s
+  tl.set('#s3-number', { opacity:0 }, 8.33);
+  tl.set('#s3-number', { opacity:1 }, 8.5);
+  tl.to(ctr, {
+    val: 900000,
+    duration: 0.86,
+    ease: 'expo.out',
+    onUpdate: function() {
+      var el = document.getElementById('s3-number');
+      if (el) el.textContent = Math.round(ctr.val).toLocaleString('en-US');
+    }
+  }, 8.5);
+
+  // Stat label prints after count locks
+  tl.set( '#s3-label', { opacity:0 }, 8.33);
+  tl.from('#s3-label', { y:16, opacity:0, duration:0.28, ease:'power4.out' }, 8.5 + 0.86 + 0.02);
+
+  // ─── TRANSITION S3→S4 at 11.0s ───────────────────────────────
+  tl.to(    '#s3', { opacity:0, duration:0.18, ease:'power2.inOut' }, 11.0);
+  tl.fromTo('#s4', { opacity:0 }, { opacity:1, duration:0.18, ease:'power2.inOut' }, 11.03);
+
+  // ══════════════════════════════════════════════════════════════
+  // SCENE 4 (11.0–13.2s)
+  // ══════════════════════════════════════════════════════════════
+  tl.from('#s4 .file-meta',  { opacity:0, duration:0.28, ease:'power4.out' }, 11.1);
+  tl.from('#s4 .hairline',   { scaleX:0, transformOrigin:'left center', duration:0.28, ease:'power4.out', stagger:0.05 }, 11.06);
+  tl.from('#s4 .crop-mark',  { opacity:0, duration:0.2, ease:'power4.out', stagger:0.04 }, 11.1);
+  tl.from('#s4-ghost',       { opacity:0, duration:0.4, ease:'power2.out' }, 11.1);
+  tl.to(  '#s4-ghost',       { y:-10, duration:GDUR, ease:'sine.inOut', repeat:GREP, yoyo:true }, 11.1);
+  tl.from('#s4-chip',        { y:32, opacity:0, duration:0.44, ease:'power4.out' }, 11.2);
+  tl.from('#s4-github-url',  { y:16, opacity:0, duration:0.28, ease:'power4.out' }, 11.45);
+
+  // ─── TRANSITION S4→S5 at 13.2s ───────────────────────────────
+  tl.to(    '#s4', { opacity:0, duration:0.18, ease:'power2.inOut' }, 13.2);
+  tl.fromTo('#s5', { opacity:0 }, { opacity:1, duration:0.18, ease:'power2.inOut' }, 13.23);
+
+  // ══════════════════════════════════════════════════════════════
+  // SCENE 5 (13.2–21.0s) — URL DIFF
+  // ══════════════════════════════════════════════════════════════
+  tl.from('#s5 .file-meta',  { opacity:0, duration:0.28, ease:'power4.out' }, 13.35);
+  tl.from('#s5 .hairline',   { scaleX:0, transformOrigin:'left center', duration:0.28, ease:'power4.out', stagger:0.05 }, 13.28);
+  tl.from('#s5 .crop-mark',  { opacity:0, duration:0.2, ease:'power4.out', stagger:0.04 }, 13.35);
+  tl.from('#s5-ghost',       { opacity:0, duration:0.4, ease:'power2.out' }, 13.3);
+  tl.to(  '#s5-ghost',       { y:-10, duration:GDUR, ease:'sine.inOut', repeat:GREP, yoyo:true }, 13.3);
+  tl.from('#s5-eyebrow',     { y:18, opacity:0, duration:0.28, ease:'power4.out' }, 13.4);
+  tl.from('#s5-mono-block',  { y:32, opacity:0, duration:0.44, ease:'power4.out' }, 13.55);
+
+  // Strikethrough fires at "but" (t=17.36)
+  tl.to('#s5-strike1', { scaleX:1, duration:0.2, ease:'steps(8)' }, 17.36);
+  // Line 2 appears 200ms after
+  tl.to('#s5-line2',   { opacity:1, duration:0.28, ease:'power4.out' }, 17.56);
+  // Body copy appears at "as if" (t=19.46)
+  tl.to('#s5-body',    { opacity:1, y:0, duration:0.44, ease:'power4.out' }, 19.46);
+
+  // ─── TRANSITION S5→S6 at 21.0s ───────────────────────────────
+  tl.to(    '#s5', { opacity:0, duration:0.18, ease:'power2.inOut' }, 21.0);
+  tl.fromTo('#s6', { opacity:0 }, { opacity:1, duration:0.18, ease:'power2.inOut' }, 21.03);
+
+  // ══════════════════════════════════════════════════════════════
+  // SCENE 6 (21.0–26.5s) — VP QUOTE
+  // ══════════════════════════════════════════════════════════════
+  tl.from('#s6 .hairline', { scaleX:0, transformOrigin:'left center', duration:0.28, ease:'power4.out', stagger:0.05 }, 21.08);
+  tl.from('#s6-ghost',     { opacity:0, duration:0.4, ease:'power2.out' }, 21.08);
+  tl.to(  '#s6-ghost',     { y:-10, duration:GDUR, ease:'sine.inOut', repeat:GREP, yoyo:true }, 21.08);
+  tl.from('#s6-quote',     { y:36, opacity:0, duration:0.44, ease:'power4.out' }, 21.2);
+  tl.from('#s6-attr',      { y:16, opacity:0, duration:0.28, ease:'power4.out' }, 21.88);
+
+  // ─── TRANSITION S6→S7 at 26.5s ───────────────────────────────
+  tl.to(    '#s6', { opacity:0, duration:0.18, ease:'power2.inOut' }, 26.5);
+  tl.fromTo('#s7', { opacity:0 }, { opacity:1, duration:0.18, ease:'power2.inOut' }, 26.53);
+
+  // ══════════════════════════════════════════════════════════════
+  // SCENE 7 (26.5–30.2s) — REVERSED
+  // ══════════════════════════════════════════════════════════════
+  tl.from('#s7 .hairline', { scaleX:0, transformOrigin:'left center', duration:0.28, ease:'power4.out', stagger:0.05 }, 26.58);
+  tl.from('#s7-ghost',     { opacity:0, duration:0.4, ease:'power2.out' }, 26.58);
+  tl.to(  '#s7-ghost',     { y:-10, duration:GDUR, ease:'sine.inOut', repeat:GREP, yoyo:true }, 26.58);
+  tl.from('#s7-hero',      { y:40, opacity:0, duration:0.44, ease:'power4.out' }, 26.68);
+  tl.from('#s7-sub',       { y:20, opacity:0, duration:0.28, ease:'power4.out' }, 26.94);
+
+  // ─── TRANSITION S7→S8 at 30.2s ───────────────────────────────
+  tl.to(    '#s7', { opacity:0, duration:0.18, ease:'power2.inOut' }, 30.2);
+  tl.fromTo('#s8', { opacity:0 }, { opacity:1, duration:0.18, ease:'power2.inOut' }, 30.23);
+
+  // ══════════════════════════════════════════════════════════════
+  // SCENE 8 (30.2–34.9s) — PRICE ESCALATION
+  // ══════════════════════════════════════════════════════════════
+  tl.from('#s8 .file-meta',  { opacity:0, duration:0.28, ease:'power4.out' }, 30.35);
+  tl.from('#s8 .hairline',   { scaleX:0, transformOrigin:'left center', duration:0.28, ease:'power4.out', stagger:0.05 }, 30.28);
+  tl.from('#s8 .crop-mark',  { opacity:0, duration:0.2, ease:'power4.out', stagger:0.04 }, 30.35);
+  tl.from('#s8-ghost',       { opacity:0, duration:0.4, ease:'power2.out' }, 30.3);
+  tl.to(  '#s8-ghost',       { y:-10, duration:GDUR, ease:'sine.inOut', repeat:GREP, yoyo:true }, 30.3);
+
+  // $20 enters (beat 1)
+  tl.from('#s8-old-wrap', { y:40, opacity:0, duration:0.44, ease:'power4.out' }, 30.38);
+
+  // Strikethrough at "$100-a-month" spoken (t=30.43)
+  tl.to('#s8-strike', { scaleX:1, duration:0.24, ease:'steps(8)' }, 30.43);
+
+  // $100 prints (beat 2) — 440ms after strikethrough
+  tl.to(  '#s8-new', { opacity:1, duration:0.44, ease:'power4.out' }, 30.43 + 0.24);
+  tl.from('#s8-new', { y:44 }, 30.43 + 0.24);
+
+  // Labels appear after $100
+  tl.to('#s8-label', { opacity:1, duration:0.28, ease:'power4.out' }, 30.43 + 0.24 + 0.44 + 0.05);
+  tl.to('#s8-mult',  { opacity:1, duration:0.28, ease:'power4.out' }, 30.43 + 0.24 + 0.44 + 0.22);
+
+  // ─── TRANSITION S8→S9 at 34.9s ───────────────────────────────
+  tl.to(    '#s8', { opacity:0, duration:0.18, ease:'power2.inOut' }, 34.9);
+  tl.fromTo('#s9', { opacity:0 }, { opacity:1, duration:0.18, ease:'power2.inOut' }, 34.93);
+
+  // ══════════════════════════════════════════════════════════════
+  // SCENE 9 (34.9–38.1s) — TRUST CRISIS
+  // ══════════════════════════════════════════════════════════════
+  tl.from('#s9 .hairline', { scaleX:0, transformOrigin:'left center', duration:0.28, ease:'power4.out', stagger:0.05 }, 34.98);
+  tl.from('#s9-ghost',     { opacity:0, duration:0.4, ease:'power2.out' }, 34.98);
+  tl.to(  '#s9-ghost',     { y:-10, duration:GDUR, ease:'sine.inOut', repeat:GREP, yoyo:true }, 34.98);
+
+  // Row 1 (business case real) — at "real." spoken (t=35.84)
+  tl.to(  '#s9-row1', { opacity:1, duration:0.28, ease:'power4.out' }, 35.2);
+  tl.from('#s9-row1', { y:22 }, 35.2);
+  tl.to(  '#s9-div',  { opacity:1, duration:0.2, ease:'power4.out' }, 35.45);
+
+  // Row 2 (trust crisis) — at "execution" (t=36.42)
+  tl.to(  '#s9-row2', { opacity:1, duration:0.28, ease:'power4.out' }, 36.0);
+  tl.from('#s9-row2', { y:22 }, 36.0);
+
+  // ─── TRANSITION S9→S10 at 38.1s ──────────────────────────────
+  tl.to(    '#s9',  { opacity:0, duration:0.18, ease:'power2.inOut' }, 38.1);
+  tl.fromTo('#s10', { opacity:0 }, { opacity:1, duration:0.18, ease:'power2.inOut' }, 38.13);
+
+  // ══════════════════════════════════════════════════════════════
+  // SCENE 10 (38.1–42.61s) — EVALUATE CTA
+  // ══════════════════════════════════════════════════════════════
+  tl.from('#s10 .file-meta', { opacity:0, duration:0.28, ease:'power4.out' }, 38.25);
+  tl.from('#s10 .hairline',  { scaleX:0, transformOrigin:'left center', duration:0.28, ease:'power4.out', stagger:0.05 }, 38.18);
+  tl.from('#s10 .crop-mark', { opacity:0, duration:0.2, ease:'power4.out', stagger:0.04 }, 38.25);
+  tl.from('#s10-ghost',      { opacity:0, duration:0.4, ease:'power2.out' }, 38.2);
+  tl.to(  '#s10-ghost',      { y:-10, duration:GDUR, ease:'sine.inOut', repeat:GREP, yoyo:true }, 38.2);
+  tl.from('#s10-eyebrow',    { y:18, opacity:0, duration:0.28, ease:'power4.out' }, 38.3);
+  tl.from('#s10-hero',       { y:40, opacity:0, duration:0.44, ease:'power4.out' }, 38.45);
+
+  // Red underline draws at "now" (t=40.58)
+  tl.to('#s10-uline', { scaleX:1, duration:0.2, ease:'steps(8)' }, 40.58);
+
+  // ─── TRANSITION S10→S11 at 42.61s ────────────────────────────
+  tl.to(    '#s10', { opacity:0, duration:0.28, ease:'power2.inOut' }, 42.61);
+  tl.fromTo('#s11', { opacity:0 }, { opacity:1, duration:0.4, ease:'power2.inOut' }, 42.72);
+
+  // ══════════════════════════════════════════════════════════════
+  // SCENE 11 (42.61–45.61s) — FOLLOW OVERLAY
+  // ══════════════════════════════════════════════════════════════
+  tl.from('#s11 .hairline', { scaleX:0, transformOrigin:'left center', duration:0.28, ease:'power4.out', stagger:0.05 }, 42.8);
+  tl.from('#follow-box',    { y:40, opacity:0, duration:0.44, ease:'power4.out' }, 42.9);
+  // Final fade-out
+  tl.to('#s11', { opacity:0, duration:0.5, ease:'power4.in' }, 45.1);
+
+  // ══════════════════════════════════════════════════════════════
+  // CAPTIONS
+  // ══════════════════════════════════════════════════════════════
+  GROUPS.forEach(function(g, gi) {
+    var groupEl = document.getElementById('cg-' + gi);
+    if (!groupEl) return;
+
+    // Reveal group
+    tl.set(groupEl,     { visibility:'visible', opacity:0 }, g.start);
+    tl.to( groupEl,     { opacity:1, duration:0.06, ease:'none' }, g.start);
+
+    // Karaoke — snap active word to amber, previous words back to phosphor
+    g.words.forEach(function(w, wi) {
+      tl.set('#cw-' + gi + '-' + wi, { color:'#F5A623' }, w.s);
+      if (wi > 0) {
+        tl.set('#cw-' + gi + '-' + (wi-1), { color:'#E8E4DC' }, w.s);
+      }
+    });
+
+    // Exit
+    var exitT = g.end - 0.08;
+    tl.to( groupEl, { opacity:0, duration:0.06, ease:'none' }, exitT);
+    tl.set(groupEl, { opacity:0, visibility:'hidden' }, g.end);
+  });
+
+  // ──────────────────────────────────────────────────────────────
+  // Register
+  // ──────────────────────────────────────────────────────────────
+  window.__timelines['main'] = tl;
+  </script>
+</body>
+</html>
