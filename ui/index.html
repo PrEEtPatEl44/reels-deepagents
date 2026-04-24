@@ -27,6 +27,13 @@
   <main class="main">
     <section class="artifacts">
       <div id="artifact-tabs" class="tabs"></div>
+      <div class="artifact-header">
+        <span id="artifact-filename">select a file</span>
+        <div class="artifact-actions">
+          <button id="copy-artifact" class="btn-small">Copy</button>
+          <button id="download-artifact" class="btn-small">Download</button>
+        </div>
+      </div>
       <div id="artifact-content" class="content">
         <p class="placeholder">select a completed stage artifact on the left to view its file contents.</p>
       </div>
@@ -35,7 +42,10 @@
     <section class="logpanel">
       <div class="logheader">
         <span>live log</span>
-        <label class="tiny"><input type="checkbox" id="follow" checked /> follow</label>
+        <div class="log-actions">
+          <button id="download-logs" class="btn-small">Download Logs</button>
+          <label class="tiny"><input type="checkbox" id="follow" checked /> follow</label>
+        </div>
       </div>
       <div id="log" class="log"></div>
     </section>

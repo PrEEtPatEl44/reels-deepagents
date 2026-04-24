@@ -24,7 +24,25 @@ const state = {
   sse: null,
   artifactsEnabled: new Set(),
   activeTab: null,
+  activeContent: null,
 };
+
+const logState = {
+  currentStage: null,
+  groups: {}, // stage -> { details, body }
+};
+
+function getLogGroup(stage) {
+  if (logState.groups[stage]) return logState.groups[stage];
+  const details = document.createElement("details");
+  details.className = "stage-group";
+  details.open = true;
+  details.innerHTML = `<summary>${stage}</summary><div class="stage-log-body"></div>`;
+  document.getElementById("log").appendChild(details);
+  const group = { details, body: details.querySelector(".stage-log-body") };
+  logState.groups[stage] = group;
+  return group;
+}
 
 function fmtTime(ts) {
   const d = new Date(ts * 1000);
@@ -103,11 +121,12 @@ function enableTab(key) {
   if (!state.activeTab) selectTab(key);
 }
 
-async function selectTab(key) {
+async function selectTab(key, retryCount = 0) {
   const def = ARTIFACT_DEFS.find((a) => a.key === key);
   if (!def) return;
   state.activeTab = key;
   document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t.dataset.key === key));
+  document.getElementById("artifact-filename").textContent = def.file;
 
   const content = document.getElementById("artifact-content");
   if (!state.runId) { content.innerHTML = "<p class='placeholder'>no run selected</p>"; return; }
@@ -119,11 +138,19 @@ async function selectTab(key) {
     return;
   }
 
-  content.innerHTML = "<p class='placeholder'>loading…</p>";
+  content.innerHTML = `<p class='placeholder'>loading${retryCount > 0 ? ' (retry ' + retryCount + ')' : ''}…</p>`;
   try {
     const res = await fetch(url);
-    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    if (!res.ok) {
+      if (res.status === 404 && retryCount < 3) {
+        console.log(`Artifact ${def.file} not found, retrying in 1s...`);
+        setTimeout(() => selectTab(key, retryCount + 1), 1000);
+        return;
+      }
+      throw new Error(`${res.status} ${res.statusText}`);
+    }
     const txt = await res.text();
+    state.activeContent = txt; // Store for copy
     const pre = document.createElement("pre");
     const code = document.createElement("code");
     code.className = `language-${def.lang}`;
@@ -156,9 +183,10 @@ function logRow(ev) {
   `;
   row.querySelector(".msg").textContent = formatEvent(ev);
 
-  const log = document.getElementById("log");
-  log.appendChild(row);
+  const group = getLogGroup(stag);
+  group.body.appendChild(row);
 
+  const log = document.getElementById("log");
   const follow = document.getElementById("follow").checked;
   if (follow) log.scrollTop = log.scrollHeight;
 }
@@ -203,11 +231,20 @@ function handleEvent(ev) {
       break;
     }
     case "stage_start":
+      // Collapse previous stage's logs
+      if (logState.currentStage && logState.groups[logState.currentStage]) {
+        logState.groups[logState.currentStage].details.open = false;
+      }
+      logState.currentStage = ev.stage;
       state.stages[ev.stage].t0 = ev.ts;
       setStageStatus(ev.stage, "running", "starting…");
       setStageTime(ev.stage, "");
       break;
     case "stage_end": {
+      // Collapse this stage's logs once done
+      if (logState.groups[ev.stage]) {
+        logState.groups[ev.stage].details.open = false;
+      }
       const st = state.stages[ev.stage];
       st.t1 = ev.ts;
       const status = ev.status === "error" ? "error" : (ev.status === "skipped" ? "skipped" : "ok");
@@ -254,6 +291,50 @@ function stopElapsedTimer() {
   if (state.elapsedTimer) { clearInterval(state.elapsedTimer); state.elapsedTimer = null; }
 }
 
+// --- Actions ---
+
+function copyArtifact() {
+  if (!state.activeContent) return;
+  navigator.clipboard.writeText(state.activeContent).then(() => {
+    const btn = document.getElementById("copy-artifact");
+    const old = btn.textContent;
+    btn.textContent = "Copied!";
+    setTimeout(() => btn.textContent = old, 2000);
+  });
+}
+
+function downloadArtifact() {
+  const def = ARTIFACT_DEFS.find(a => a.key === state.activeTab);
+  if (!def || !state.runId) return;
+  const url = `/api/runs/${state.runId}/artifact/${def.file}`;
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = def.file;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+function downloadLogs() {
+  const logRows = document.querySelectorAll(".log .row");
+  const text = Array.from(logRows).map(r => {
+    const ts = r.querySelector(".ts").textContent;
+    const stag = r.querySelector(".stag").textContent;
+    const msg = r.querySelector(".msg").textContent;
+    return `[${ts}] ${stag.padEnd(10)} | ${msg}`;
+  }).join("\n");
+  
+  const blob = new Blob([text], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `run-${state.runId || 'logs'}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 // --- boot ---
 
 async function connectLatest() {
@@ -284,6 +365,8 @@ function openRun(runId) {
   document.getElementById("run-status").textContent = "connecting";
   document.getElementById("run-status").className = "badge pending";
   document.getElementById("log").innerHTML = "";
+  logState.groups = {};
+  logState.currentStage = null;
   buildStageStrip();
   buildTabs();
   document.getElementById("artifact-content").innerHTML = "<p class='placeholder'>select a completed stage artifact above to view its file contents.</p>";
@@ -318,4 +401,8 @@ window.addEventListener("DOMContentLoaded", () => {
   buildStageStrip();
   buildTabs();
   connectLatest();
+
+  document.getElementById("copy-artifact").addEventListener("click", copyArtifact);
+  document.getElementById("download-artifact").addEventListener("click", downloadArtifact);
+  document.getElementById("download-logs").addEventListener("click", downloadLogs);
 });
