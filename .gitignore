@@ -11,3 +11,5 @@ sample_svg_for_styles
 report.md
 caption.txt
 .claude/
+.worktrees
+*.logs
