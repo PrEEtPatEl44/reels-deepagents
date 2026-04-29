@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Bubble or Revolution</title>
+</head>
+<body>
+<div
+  data-composition-id="ai-bubble-or-revolution"
+  data-width="1080"
+  data-height="1920"
+  data-start="0"
+  data-duration="42.53"
+  data-track-index="0"
+>
+
+  <!-- ═══════════════════════════════════════════════════════
+       AUDIO
+  ═══════════════════════════════════════════════════════ -->
+  <audio
+    id="el-audio"
+    data-start="0"
+    data-duration="39.53"
+    data-track-index="1"
+    data-volume="1"
+    src="narration.wav"
+  ></audio>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SCENE 1 — $1.4T count-up  (0 – 4.65s)
+  ═══════════════════════════════════════════════════════ -->
+  <div id="s1" data-start="0" data-duration="4.7" data-track-index="2"
+       style="position:absolute;top:0;left:0;width:1080px;height:1920px;background:#090C12;">
+
+    <!-- ghost ticker -->
+    <div style="position:absolute;left:50%;top:160px;transform:translateX(-50%);
+                font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:360px;
+                color:#1E2A3C;line-height:1;white-space:nowrap;pointer-events:none;
+                letter-spacing:0.01em;">$1.4T</div>
+    <!-- ledger rules -->
+    <div style="position:absolute;top:400px;left:0;width:1080px;height:1px;background:#243044;"></div>
+    <div style="position:absolute;top:1120px;left:0;width:1080px;height:1px;background:#243044;"></div>
+
+    <!-- content container — left:180px width:720px, flex-col center, y:240→1400 -->
+    <div style="position:absolute;left:180px;width:720px;top:240px;bottom:520px;
+                display:flex;flex-direction:column;align-items:center;justify-content:center;
+                gap:28px;box-sizing:border-box;">
+      <div id="s1-eyebrow" style="font-family:'IBM Plex Mono',monospace;font-weight:400;
+           font-size:26px;letter-spacing:0.16em;text-transform:uppercase;color:#6A7A94;
+           text-align:center;">Q1 2025 · AI INFRASTRUCTURE SPEND</div>
+      <div id="s1-number" style="font-family:'Bebas Neue',sans-serif;font-weight:400;
+           font-size:280px;letter-spacing:0.01em;line-height:0.88;color:#D8E0EE;
+           text-align:center;font-variant-numeric:tabular-nums;">$0</div>
+      <div id="s1-underline" style="width:0px;height:4px;background:#D4A017;
+           transform-origin:left center;max-width:520px;"></div>
+      <div id="s1-unit" style="font-family:'IBM Plex Mono',monospace;font-weight:400;
+           font-size:26px;letter-spacing:0.16em;text-transform:uppercase;color:#6A7A94;
+           text-align:center;max-width:660px;">PUMPED INTO AI INFRASTRUCTURE — Q1 2025</div>
+    </div>
+
+    <!-- shimmer sweep (Scene 1 only) -->
+    <div id="s1-shimmer" style="position:absolute;top:0;left:0;width:100%;height:100%;
+         pointer-events:none;overflow:hidden;opacity:0;">
+      <div id="s1-shimmer-beam" style="position:absolute;top:0;left:-30%;width:30%;height:100%;
+           background:linear-gradient(90deg,rgba(212,160,23,0) 0%,rgba(212,160,23,0.35) 50%,rgba(212,160,23,0) 100%);"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SCENE 2 — 100× telecom boom  (4.7 – 9.1s)
+  ═══════════════════════════════════════════════════════ -->
+  <div id="s2" data-start="4.7" data-duration="4.4" data-track-index="2"
+       style="position:absolute;top:0;left:0;width:1080px;height:1920px;background:#090C12;opacity:0;">
+
+    <div style="position:absolute;left:50%;top:160px;transform:translateX(-50%);
+                font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:360px;
+                color:#1E2A3C;line-height:1;white-space:nowrap;pointer-events:none;
+                letter-spacing:0.01em;">100×</div>
+    <div style="position:absolute;top:400px;left:0;width:1080px;height:1px;background:#243044;"></div>
+    <div style="position:absolute;top:1120px;left:0;width:1080px;height:1px;background:#243044;"></div>
+
+    <div style="position:absolute;left:180px;width:720px;top:240px;bottom:520px;
+                display:flex;flex-direction:column;align-items:center;justify-content:center;
+                gap:28px;box-sizing:border-box;">
+      <div id="s2-eyebrow" style="font-family:'IBM Plex Mono',monospace;font-weight:400;
+           font-size:26px;letter-spacing:0.16em;text-transform:uppercase;color:#6A7A94;
+           text-align:center;">SCALE COMPARISON</div>
+      <div id="s2-number" style="font-family:'Bebas Neue',sans-serif;font-weight:400;
+           font-size:240px;letter-spacing:0.01em;line-height:0.88;color:#D8E0EE;
+           text-align:center;">100×</div>
+      <div id="s2-label" style="font-family:'IBM Plex Mono',monospace;font-weight:400;
+           font-size:28px;letter-spacing:0.08em;text-transform:uppercase;color:#6A7A94;
+           text-align:center;max-width:660px;">THE 1990S TELECOM BOOM · INFLATION-ADJUSTED</div>
+    </div>
+
+    <!-- cursor blink -->
+    <div id="s2-cursor" style="position:absolute;width:2px;height:32px;background:#6A7A94;
+         bottom:560px;left:540px;opacity:0;"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SCENE 3 — 3.7% → 10% adoption  (9.1 – 16.4s)
+  ═══════════════════════════════════════════════════════ -->
+  <div id="s3" data-start="9.1" data-duration="7.3" data-track-index="2"
+       style="position:absolute;top:0;left:0;width:1080px;height:1920px;background:#090C12;opacity:0;">
+
+    <div style="position:absolute;left:50%;top:160px;transform:translateX(-50%);
+                font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:360px;
+                color:#1E2A3C;line-height:1;white-space:nowrap;pointer-events:none;
+                letter-spacing:0.01em;">ADOPTED</div>
+    <div style="position:absolute;top:400px;left:0;width:1080px;height:1px;background:#243044;"></div>
+    <div style="position:absolute;top:1120px;left:0;width:1080px;height:1px;background:#243044;"></div>
+
+    <div style="position:absolute;left:180px;width:720px;top:240px;bottom:520px;
+                display:flex;flex-direction:column;align-items:center;justify-content:center;
+                gap:12px;box-sizing:border-box;">
+      <div id="s3-eyebrow" style="font-family:'IBM Plex Mono',monospace;font-weight:400;
+           font-size:26px;letter-spacing:0.16em;text-transform:uppercase;color:#6A7A94;
+           text-align:center;margin-bottom:16px;">REAL DEMAND SIGNAL</div>
+      <div id="s3-old" style="font-family:'IBM Plex Mono',monospace;font-weight:600;
+           font-size:100px;color:#6A7A94;letter-spacing:0.02em;line-height:1;
+           text-align:center;font-variant-numeric:tabular-nums;">3.7%</div>
+      <div id="s3-arrow" style="font-family:'IBM Plex Mono',monospace;font-weight:400;
+           font-size:60px;color:#6A7A94;line-height:1;text-align:center;">→</div>
+      <div id="s3-new" style="font-family:'IBM Plex Mono',monospace;font-weight:600;
+           font-size:160px;color:#4B9ECC;letter-spacing:0.02em;line-height:1;
+           text-align:center;font-variant-numeric:tabular-nums;">10%</div>
+      <div id="s3-label" style="font-family:'IBM Plex Mono',monospace;font-weight:400;
+           font-size:28px;letter-spacing:0.08em;text-transform:uppercase;color:#6A7A94;
+           text-align:center;max-width:660px;margin-top:16px;">BUSINESS AI ADOPTION RATE · 2 YEARS</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SCENE 4 — OpenAI valuation pull-quote  (16.4 – 21.5s)
+  ═══════════════════════════════════════════════════════ -->
+  <div id="s4" data-start="16.4" data-duration="5.2" data-track-index="2"
+       style="position:absolute;top:0;left:0;width:1080px;height:1920px;background:#090C12;opacity:0;">
+
+    <div style="position:absolute;left:50%;top:160px;transform:translateX(-50%);
+                font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:360px;
+                color:#1E2A3C;line-height:1;white-space:nowrap;pointer-events:none;
+                letter-spacing:0.01em;">OVERVALUED</div>
+    <div style="position:absolute;top:400px;left:0;width:1080px;height:1px;background:#243044;"></div>
+    <div style="position:absolute;top:1120px;left:0;width:1080px;height:1px;background:#243044;"></div>
+
+    <div style="position:absolute;left:180px;width:720px;top:240px;bottom:520px;
+                display:flex;flex-direction:column;align-items:center;justify-content:center;
+                gap:28px;box-sizing:border-box;">
+      <div id="s4-eyebrow" style="font-family:'IBM Plex Mono',monospace;font-weight:400;
+           font-size:26px;letter-spacing:0.16em;text-transform:uppercase;color:#6A7A94;
+           text-align:center;">VALUATION REALITY CHECK</div>
+      <div id="s4-quote" style="font-family:'Source Serif 4',serif;font-weight:400;
+           font-style:italic;font-size:56px;line-height:1.3;color:#D8E0EE;
+           text-align:center;max-width:660px;">
+        &#8220;Valued above Toyota,
+        Coca-Cola, and Disney
+        combined &#8212; while
+        <span id="s4-losing" style="color:#D8E0EE;">losing</span>
+        <span id="s4-money" style="color:#D8E0EE;">money.&#8221;</span>
+      </div>
+      <!-- fault-line underline: positioned relative, revealed via GSAP -->
+      <div id="s4-underline" style="width:0px;height:4px;background:#E03535;
+           transform-origin:left center;max-width:360px;"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SCENE 5 — 75% economists  (21.5 – 25.1s)
+  ═══════════════════════════════════════════════════════ -->
+  <div id="s5" data-start="21.5" data-duration="3.7" data-track-index="2"
+       style="position:absolute;top:0;left:0;width:1080px;height:1920px;background:#090C12;opacity:0;">
+
+    <div style="position:absolute;left:50%;top:160px;transform:translateX(-50%);
+                font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:360px;
+                color:#1E2A3C;line-height:1;white-space:nowrap;pointer-events:none;
+                letter-spacing:0.01em;">75%</div>
+    <div style="position:absolute;top:400px;left:0;width:1080px;height:1px;background:#243044;"></div>
+    <div style="position:absolute;top:1120px;left:0;width:1080px;height:1px;background:#243044;"></div>
+
+    <div style="position:absolute;left:180px;width:720px;top:240px;bottom:520px;
+                display:flex;flex-direction:column;align-items:center;justify-content:center;
+                gap:24px;box-sizing:border-box;">
+      <div id="s5-eyebrow" style="font-family:'IBM Plex Mono',monospace;font-weight:400;
+           font-size:26px;letter-spacing:0.16em;text-transform:uppercase;color:#6A7A94;
+           text-align:center;">ECONOMIST SURVEY</div>
+      <div id="s5-number" style="font-family:'Bebas Neue',sans-serif;font-weight:400;
+           font-size:200px;letter-spacing:0.01em;line-height:0.88;color:#D8E0EE;
+           text-align:center;font-variant-numeric:tabular-nums;">75%</div>
+      <div id="s5-label" style="font-family:'IBM Plex Mono',monospace;font-weight:400;
+           font-size:28px;letter-spacing:0.08em;text-transform:uppercase;color:#6A7A94;
+           text-align:center;max-width:660px;">OF ACADEMIC ECONOMISTS SURVEYED</div>
+      <div id="s5-call" style="font-family:'IBM Plex Mono',monospace;font-weight:600;
+           font-size:36px;letter-spacing:0.04em;color:#E03535;text-align:center;opacity:0;">
+           CALL THIS A BUBBLE</div>
+      <div id="s5-underline" style="width:0px;height:4px;background:#E03535;
+           transform-origin:left center;max-width:360px;opacity:0;"></div>
+    </div>
+
+    <div id="s5-cursor" style="position:absolute;width:2px;height:32px;background:#6A7A94;
+         bottom:560px;left:540px;opacity:0;"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SCENE 6 — $650B spend  (25.1 – 29.5s)
+  ═══════════════════════════════════════════════════════ -->
+  <div id="s6" data-start="25.1" data-duration="4.5" data-track-index="2"
+       style="position:absolute;top:0;left:0;width:1080px;height:1920px;background:#090C12;opacity:0;">
+
+    <div style="position:absolute;left:50%;top:160px;transform:translateX(-50%);
+                font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:360px;
+                color:#1E2A3C;line-height:1;white-space:nowrap;pointer-events:none;
+                letter-spacing:0.01em;">$650B</div>
+    <div style="position:absolute;top:400px;left:0;width:1080px;height:1px;background:#243044;"></div>
+    <div style="position:absolute;top:1120px;left:0;width:1080px;height:1px;background:#243044;"></div>
+
+    <div style="position:absolute;left:180px;width:720px;top:240px;bottom:520px;
+                display:flex;flex-direction:column;align-items:center;justify-content:center;
+                gap:24px;box-sizing:border-box;">
+      <div id="s6-eyebrow" style="font-family:'IBM Plex Mono',monospace;font-weight:400;
+           font-size:26px;letter-spacing:0.16em;text-transform:uppercase;color:#6A7A94;
+           text-align:center;">BIG TECH COMMITMENT</div>
+      <div id="s6-number" style="font-family:'Bebas Neue',sans-serif;font-weight:400;
+           font-size:200px;letter-spacing:0.01em;line-height:0.88;color:#D8E0EE;
+           text-align:center;font-variant-numeric:tabular-nums;">$650B</div>
+      <div id="s6-underline" style="width:0px;height:4px;background:#D4A017;
+           transform-origin:left center;max-width:440px;"></div>
+      <div id="s6-label" style="font-family:'IBM Plex Mono',monospace;font-weight:400;
+           font-size:28px;letter-spacing:0.08em;text-transform:uppercase;color:#6A7A94;
+           text-align:center;max-width:660px;margin-top:8px;">PROJECTED BIG TECH AI SPEND · 2026</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SCENE 7 — circular capital flow  (29.5 – 35.3s)
+  ═══════════════════════════════════════════════════════ -->
+  <div id="s7" data-start="29.5" data-duration="5.9" data-track-index="2"
+       style="position:absolute;top:0;left:0;width:1080px;height:1920px;background:#090C12;opacity:0;">
+
+    <div style="position:absolute;left:50%;top:160px;transform:translateX(-50%);
+                font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:360px;
+                color:#1E2A3C;line-height:1;white-space:nowrap;pointer-events:none;
+                letter-spacing:0.01em;">CIRCULAR</div>
+    <div style="position:absolute;top:400px;left:0;width:1080px;height:1px;background:#243044;"></div>
+    <div style="position:absolute;top:1120px;left:0;width:1080px;height:1px;background:#243044;"></div>
+
+    <div style="position:absolute;left:180px;width:720px;top:240px;bottom:520px;
+                display:flex;flex-direction:column;align-items:center;justify-content:center;
+                gap:0;box-sizing:border-box;">
+      <div id="s7-eyebrow" style="font-family:'IBM Plex Mono',monospace;font-weight:400;
+           font-size:26px;letter-spacing:0.16em;text-transform:uppercase;color:#6A7A94;
+           text-align:center;margin-bottom:48px;">THE CIRCULAR FLOW</div>
+
+      <!-- Row 1 -->
+      <div id="s7-row1" style="display:flex;align-items:center;gap:20px;opacity:0;
+           font-family:'IBM Plex Mono',monospace;font-weight:400;font-size:36px;
+           color:#D8E0EE;letter-spacing:0.04em;line-height:1.25;white-space:nowrap;">
+        <div style="width:4px;height:28px;background:#E03535;flex-shrink:0;"></div>
+        <span>CLOUD GIANTS &#8594; FUND AI STARTUPS</span>
+      </div>
+      <!-- Row 2 -->
+      <div id="s7-row2" style="display:flex;align-items:center;gap:20px;opacity:0;
+           font-family:'IBM Plex Mono',monospace;font-weight:400;font-size:36px;
+           color:#D8E0EE;letter-spacing:0.04em;line-height:1.25;white-space:nowrap;
+           margin-top:24px;">
+        <div style="width:4px;height:28px;background:#E03535;flex-shrink:0;"></div>
+        <span>AI STARTUPS &nbsp;&#8594; SPEND ON CLOUD</span>
+      </div>
+      <!-- Row 3 -->
+      <div id="s7-row3" style="display:flex;align-items:center;gap:20px;opacity:0;
+           font-family:'IBM Plex Mono',monospace;font-weight:400;font-size:36px;
+           color:#D8E0EE;letter-spacing:0.04em;line-height:1.25;white-space:nowrap;
+           margin-top:24px;">
+        <div style="width:4px;height:28px;background:#E03535;flex-shrink:0;"></div>
+        <span>CLOUD GIANTS &#8594; BOOK REVENUE</span>
+      </div>
+    </div>
+
+    <div id="s7-cursor" style="position:absolute;width:2px;height:32px;background:#6A7A94;
+         bottom:560px;left:540px;opacity:0;"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SCENE 8 — verdict  (35.3 – 39.6s)
+       Entry: 4-strip staggered cover wipe (slate-0 strips)
+  ═══════════════════════════════════════════════════════ -->
+  <!-- Cover strips at z-index 50 -->
+  <div id="v-strip-0" style="position:absolute;top:0;left:-1080px;width:1080px;height:480px;
+       background:#090C12;z-index:50;pointer-events:none;"></div>
+  <div id="v-strip-1" style="position:absolute;top:480px;left:-1080px;width:1080px;height:480px;
+       background:#090C12;z-index:50;pointer-events:none;"></div>
+  <div id="v-strip-2" style="position:absolute;top:960px;left:-1080px;width:1080px;height:480px;
+       background:#090C12;z-index:50;pointer-events:none;"></div>
+  <div id="v-strip-3" style="position:absolute;top:1440px;left:-1080px;width:1080px;height:480px;
+       background:#090C12;z-index:50;pointer-events:none;"></div>
+
+  <div id="s8" data-start="35.3" data-duration="4.3" data-track-index="2"
+       style="position:absolute;top:0;left:0;width:1080px;height:1920px;background:#090C12;opacity:0;">
+
+    <div style="position:absolute;left:50%;top:160px;transform:translateX(-50%);
+                font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:360px;
+                color:#1E2A3C;line-height:1;white-space:nowrap;pointer-events:none;
+                letter-spacing:0.01em;">THE GAP</div>
+    <div style="position:absolute;top:400px;left:0;width:1080px;height:1px;background:#243044;"></div>
+    <div style="position:absolute;top:1120px;left:0;width:1080px;height:1px;background:#243044;"></div>
+
+    <div style="position:absolute;left:180px;width:720px;top:240px;bottom:520px;
+                display:flex;flex-direction:column;align-items:center;justify-content:center;
+                gap:0;box-sizing:border-box;">
+      <div id="s8-eyebrow" style="font-family:'IBM Plex Mono',monospace;font-weight:400;
+           font-size:26px;letter-spacing:0.16em;text-transform:uppercase;color:#6A7A94;
+           text-align:center;margin-bottom:36px;">THE VERDICT</div>
+      <div id="s8-real" style="font-family:'Bebas Neue',sans-serif;font-weight:400;
+           font-size:130px;letter-spacing:0.01em;line-height:0.90;color:#D8E0EE;
+           text-align:center;">REAL INNOVATION</div>
+      <div id="s8-inflated" style="font-family:'Bebas Neue',sans-serif;font-weight:400;
+           font-size:130px;letter-spacing:0.01em;line-height:0.90;color:#E03535;
+           text-align:center;margin-top:16px;opacity:0;">INFLATED PRICING</div>
+      <div id="s8-gap" style="font-family:'IBM Plex Mono',monospace;font-weight:600;
+           font-size:42px;color:#D4A017;letter-spacing:0.02em;text-align:center;
+           margin-top:48px;opacity:0;max-width:660px;">THAT GAP IS THE WHOLE STORY.</div>
+      <div id="s8-underline" style="width:0px;height:2px;background:#8A6510;
+           transform-origin:left center;max-width:560px;margin-top:8px;opacity:0;"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SCENE 9 — Follow for more  (39.6 – 42.53s)
+  ═══════════════════════════════════════════════════════ -->
+  <div id="s9" data-start="39.6" data-duration="2.93" data-track-index="2"
+       style="position:absolute;top:0;left:0;width:1080px;height:1920px;background:#090C12;opacity:0;">
+
+    <div style="position:absolute;left:50%;top:160px;transform:translateX(-50%);
+                font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:360px;
+                color:#1E2A3C;line-height:1;white-space:nowrap;pointer-events:none;
+                letter-spacing:0.01em;">FOLLOW</div>
+    <div style="position:absolute;top:400px;left:0;width:1080px;height:1px;background:#243044;"></div>
+    <div style="position:absolute;top:1120px;left:0;width:1080px;height:1px;background:#243044;"></div>
+
+    <div style="position:absolute;left:180px;width:720px;top:240px;bottom:520px;
+                display:flex;flex-direction:column;align-items:center;justify-content:center;
+                gap:12px;box-sizing:border-box;">
+      <div id="s9-cta" style="font-family:'Bebas Neue',sans-serif;font-weight:400;
+           font-size:100px;color:#6A7A94;letter-spacing:0.01em;text-align:center;
+           line-height:0.9;">Follow for <span id="s9-more" style="color:#D8E0EE;">more</span></div>
+      <div id="s9-underline" style="width:0px;height:2px;background:#6A7A94;
+           transform-origin:left center;max-width:420px;"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       HARD-CUT FLASH DIVS  (z-index 40)
+  ═══════════════════════════════════════════════════════ -->
+  <div id="flash1" style="position:absolute;top:0;left:0;width:1080px;height:1920px;background:#090C12;z-index:40;opacity:0;pointer-events:none;"></div>
+  <div id="flash2" style="position:absolute;top:0;left:0;width:1080px;height:1920px;background:#090C12;z-index:40;opacity:0;pointer-events:none;"></div>
+  <div id="flash3" style="position:absolute;top:0;left:0;width:1080px;height:1920px;background:#090C12;z-index:40;opacity:0;pointer-events:none;"></div>
+  <div id="flash4" style="position:absolute;top:0;left:0;width:1080px;height:1920px;background:#090C12;z-index:40;opacity:0;pointer-events:none;"></div>
+  <div id="flash5" style="position:absolute;top:0;left:0;width:1080px;height:1920px;background:#090C12;z-index:40;opacity:0;pointer-events:none;"></div>
+  <div id="flash6" style="position:absolute;top:0;left:0;width:1080px;height:1920px;background:#090C12;z-index:40;opacity:0;pointer-events:none;"></div>
+  <div id="flash7" style="position:absolute;top:0;left:0;width:1080px;height:1920px;background:#090C12;z-index:40;opacity:0;pointer-events:none;"></div>
+  <div id="flash8" style="position:absolute;top:0;left:0;width:1080px;height:1920px;background:#090C12;z-index:40;opacity:0;pointer-events:none;"></div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       CAPTIONS LAYER  (track-index 10)
+  ═══════════════════════════════════════════════════════ -->
+  <div id="captions-layer" data-start="0" data-duration="42.53" data-track-index="10"
+       style="position:absolute;top:0;left:0;width:1080px;height:1920px;pointer-events:none;">
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       VIGNETTE  (track-index 18)
+  ═══════════════════════════════════════════════════════ -->
+  <div id="vignette" data-start="0" data-duration="42.53" data-track-index="18"
+       style="position:absolute;top:0;left:0;width:1080px;height:1920px;pointer-events:none;
+              background:radial-gradient(ellipse 90% 90% at 50% 50%,
+                rgba(15,20,32,0) 40%,
+                rgba(15,20,32,0.22) 100%);
+              opacity:0.18;">
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       GRAIN OVERLAY  (track-index 20)
+  ═══════════════════════════════════════════════════════ -->
+  <div id="grain-overlay" data-start="0" data-duration="42.53" data-track-index="20"
+       style="position:absolute;top:0;left:0;width:1080px;height:1920px;
+              pointer-events:none;z-index:200;overflow:hidden;">
+    <div style="position:absolute;top:-50%;left:-50%;width:200%;height:200%;
+                background-image:url('data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20256%20256%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cfilter%20id%3D%22noise%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.9%22%20numOctaves%3D%224%22%20stitchTiles%3D%22stitch%22%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20filter%3D%22url(%23noise)%22%20opacity%3D%221%22%2F%3E%3C%2Fsvg%3E');
+                background-size:256px 256px;
+                opacity:0.06;
+                animation:grain-shift 0.8s steps(12) infinite;"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       STYLES
+  ═══════════════════════════════════════════════════════ -->
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      background: #090C12;
+    }
+
+    [data-composition-id="ai-bubble-or-revolution"] {
+      position: relative;
+      width: 1080px;
+      height: 1920px;
+      background: #090C12;
+      overflow: hidden;
+    }
+
+    /* Caption groups */
+    .caption-group {
+      position: absolute;
+      left: 200px;
+      width: 680px;
+      top: 1240px;
+      min-height: 130px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-content: flex-start;
+      gap: 0 10px;
+      padding: 18px 28px;
+      box-sizing: border-box;
+      background: rgba(15,20,32,0.90);
+      border-radius: 6px;
+      opacity: 0;
+      visibility: hidden;
+    }
+    .caption-word {
+      font-family: 'IBM Plex Mono', monospace;
+      font-weight: 600;
+      font-size: 48px;
+      letter-spacing: -0.01em;
+      line-height: 1.15;
+      color: #D8E0EE;
+      white-space: nowrap;
+    }
+
+    /* Grain animation */
+    @keyframes grain-shift {
+      0%   { transform: translate(0,    0); }
+      8%   { transform: translate(-8px, 4px); }
+      16%  { transform: translate(6px,  -6px); }
+      25%  { transform: translate(-4px, 10px); }
+      33%  { transform: translate(10px, -2px); }
+      41%  { transform: translate(-6px, -8px); }
+      50%  { transform: translate(4px,   6px); }
+      58%  { transform: translate(-10px, 2px); }
+      66%  { transform: translate(8px,  -4px); }
+      75%  { transform: translate(-2px,  8px); }
+      83%  { transform: translate(6px,   4px); }
+      91%  { transform: translate(-4px, -6px); }
+      100% { transform: translate(0,    0); }
+    }
+  </style>
+
+  <!-- ═══════════════════════════════════════════════════════
+       GSAP + TIMELINE
+  ═══════════════════════════════════════════════════════ -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+  (function () {
+    "use strict";
+
+    /* ──────────────────────────────────────────────────
+       WORD-LEVEL TRANSCRIPT
+    ────────────────────────────────────────────────── */
+    var WORDS = [
+      {text:"$1.4",    start:0.05, end:0.7},
+      {text:"trillion",start:0.7,  end:1.26},
+      {text:"pumped",  start:1.26, end:1.69},
+      {text:"into",    start:1.69, end:1.96},
+      {text:"AI",      start:2.03, end:2.13},
+      {text:"infrastructure",start:2.13,end:3.08},
+      {text:"in",      start:3.08, end:3.16},
+      {text:"a",       start:3.16, end:3.2},
+      {text:"single",  start:3.2,  end:3.43},
+      {text:"quarter.",start:3.5,  end:4.4},
+      {text:"That",    start:4.47, end:4.63},
+      {text:"number",  start:4.63, end:4.9},
+      {text:"is",      start:5.04, end:5.05},
+      {text:"roughly", start:5.05, end:5.43},
+      {text:"100",     start:5.43, end:5.87},
+      {text:"times",   start:5.98, end:6.14},
+      {text:"the",     start:6.2,  end:6.34},
+      {text:"inflation-adjusted",start:6.34,end:7.3},
+      {text:"telecom", start:7.3,  end:7.68},
+      {text:"boom",    start:7.68, end:7.86},
+      {text:"of",      start:7.86, end:8.0},
+      {text:"the",     start:8.0,  end:8.14},
+      {text:"nineties.",start:8.17,end:8.82},
+      {text:"Here",    start:8.87, end:8.98},
+      {text:"is",      start:8.98, end:9.06},
+      {text:"the",     start:9.06, end:9.18},
+      {text:"uncomfortable",start:9.18,end:9.69},
+      {text:"truth.",  start:9.69, end:10.02},
+      {text:"The",     start:10.07,end:10.23},
+      {text:"technology",start:10.23,end:10.95},
+      {text:"is",      start:10.95,end:11.09},
+      {text:"real.",   start:11.09,end:11.61},
+      {text:"Business",start:11.66,end:12.1},
+      {text:"AI",      start:12.24,end:12.32},
+      {text:"adoption",start:12.32,end:12.88},
+      {text:"jumped",  start:12.88,end:13.3},
+      {text:"from",    start:13.3, end:13.58},
+      {text:"3.7%",    start:13.58,end:14.28},
+      {text:"to",      start:14.28,end:14.41},
+      {text:"10%",     start:14.48,end:14.91},
+      {text:"in",      start:14.91,end:15.05},
+      {text:"just",    start:15.05,end:15.33},
+      {text:"two",     start:15.33,end:15.47},
+      {text:"years.",  start:15.89,end:16.18},
+      {text:"But",     start:16.23,end:16.37},
+      {text:"open",    start:16.37,end:16.63},
+      {text:"AI",      start:16.63,end:16.66},
+      {text:"is",      start:16.8, end:16.89},
+      {text:"valued",  start:16.89,end:17.28},
+      {text:"above",   start:17.28,end:17.59},
+      {text:"Toyota,", start:17.6, end:18.12},
+      {text:"Coca-Cola,",start:18.12,end:18.83},
+      {text:"and",     start:18.83,end:18.97},
+      {text:"Disney",  start:19.04,end:19.41},
+      {text:"combined,",start:19.41,end:20.04},
+      {text:"while",   start:20.04,end:20.06},
+      {text:"losing",  start:20.51,end:20.76},
+      {text:"money.",  start:20.77,end:21.34},
+      {text:"Over",    start:21.39,end:21.58},
+      {text:"75%",     start:21.63,end:22.13},
+      {text:"of",      start:22.13,end:22.27},
+      {text:"surveyed",start:22.27,end:22.79},
+      {text:"economists",start:22.9,end:23.57},
+      {text:"call",    start:23.57,end:23.84},
+      {text:"this",    start:23.91,end:24.13},
+      {text:"a",       start:24.19,end:24.22},
+      {text:"bubble.", start:24.22,end:24.77},
+      {text:"Big",     start:24.95,end:25.1},
+      {text:"tech",    start:25.1, end:25.36},
+      {text:"is",      start:25.36,end:25.38},
+      {text:"projected",start:25.53,end:26.09},
+      {text:"to",      start:26.09,end:26.22},
+      {text:"spend",   start:26.22,end:26.55},
+      {text:"$650",    start:26.55,end:27.21},
+      {text:"billion", start:27.21,end:27.68},
+      {text:"on",      start:27.68,end:27.81},
+      {text:"AI",      start:27.81,end:27.94},
+      {text:"in",      start:27.94,end:28.07},
+      {text:"2026",    start:28.07,end:28.76},
+      {text:"alone,",  start:29.2, end:29.32},
+      {text:"and",     start:29.34,end:29.53},
+      {text:"much",    start:29.53,end:29.75},
+      {text:"of",      start:29.85,end:29.92},
+      {text:"that",    start:29.92,end:30.18},
+      {text:"money",   start:30.18,end:30.62},
+      {text:"flows",   start:30.67,end:30.86},
+      {text:"in",      start:30.91,end:31.02},
+      {text:"circles.",start:31.02,end:31.62},
+      {text:"Cloud",   start:31.67,end:31.94},
+      {text:"giants",  start:31.97,end:32.34},
+      {text:"fund",    start:32.41,end:32.67},
+      {text:"startups.",start:32.67,end:33.48},
+      {text:"Startups",start:33.53,end:33.93},
+      {text:"spend",   start:33.93,end:34.2},
+      {text:"it",      start:34.26,end:34.29},
+      {text:"back",    start:34.34,end:34.54},
+      {text:"on",      start:34.54,end:34.65},
+      {text:"cloud.",  start:34.65,end:35.14},
+      {text:"Real",    start:35.19,end:35.38},
+      {text:"innovation",start:35.43,end:36.11},
+      {text:"inflated",start:36.11,end:36.59},
+      {text:"pricing.",start:36.7, end:37.38},
+      {text:"That",    start:37.43,end:37.59},
+      {text:"gap",     start:37.59,end:37.75},
+      {text:"is",      start:37.75,end:37.85},
+      {text:"the",     start:37.85,end:37.86},
+      {text:"whole",   start:38.0, end:38.27},
+      {text:"story.",  start:38.27,end:38.72},
+      {text:"Follow",  start:38.77,end:39.01},
+      {text:"for",     start:39.01,end:39.17},
+      {text:"more.",   start:39.17,end:39.53}
+    ];
+
+    /* ──────────────────────────────────────────────────
+       GROUP WORDS INTO CAPTION GROUPS
+       Break at sentence-end punctuation (.) or 200ms+ pause or 5 words max
+    ────────────────────────────────────────────────── */
+    var GROUPS = [];
+    (function () {
+      var MAX = 5;
+      var PAUSE_THRESH = 0.18;
+      var i = 0;
+      while (i < WORDS.length) {
+        var gw = [];
+        gw.push(WORDS[i]);
+        i++;
+        while (i < WORDS.length && gw.length < MAX) {
+          var gap = WORDS[i].start - WORDS[i-1].end;
+          var prevEnds = /[.!?]$/.test(WORDS[i-1].text);
+          if (gap >= PAUSE_THRESH || prevEnds) break;
+          gw.push(WORDS[i]);
+          i++;
+        }
+        GROUPS.push({
+          words: gw,
+          start: gw[0].start,
+          end:   gw[gw.length - 1].end
+        });
+      }
+    })();
+
+    /* ──────────────────────────────────────────────────
+       BUILD CAPTION DOM
+    ────────────────────────────────────────────────── */
+    var layer = document.getElementById("captions-layer");
+    GROUPS.forEach(function(group, gi) {
+      var div = document.createElement("div");
+      div.className = "caption-group";
+      div.id = "cg-" + gi;
+      group.words.forEach(function(w, wi) {
+        var span = document.createElement("span");
+        span.className = "caption-word";
+        span.id = "cw-" + gi + "-" + wi;
+        span.textContent = w.text;
+        div.appendChild(span);
+      });
+      layer.appendChild(div);
+    });
+
+    /* ──────────────────────────────────────────────────
+       MAIN TIMELINE
+    ────────────────────────────────────────────────── */
+    var tl = gsap.timeline({ paused: true });
+    var COMP_DURATION = 42.53;
+
+    /* ── Helper: hard-cut with 50ms slate flash ─────── */
+    function hardCut(flashId, hideId, showId, T) {
+      tl.set("#" + flashId, { opacity: 1 }, T);
+      tl.set("#" + hideId,  { opacity: 0 }, T + 0.005);
+      tl.set("#" + showId,  { opacity: 1 }, T + 0.005);
+      tl.set("#" + flashId, { opacity: 0 }, T + 0.05);
+    }
+
+    /* ══════════════════════════════════════════════════
+       SCENE 1 — $1.4T count-up
+    ══════════════════════════════════════════════════ */
+    // Eyebrow first (100ms before number)
+    tl.from("#s1-eyebrow", { y: -22, opacity: 0, duration: 0.26, ease: "power4.out" }, 0.12);
+
+    // Number: slide up + count from 0 to 1.4T
+    tl.from("#s1-number", { y: 40, opacity: 0, duration: 0.36, ease: "power4.out" }, 0.22);
+    var countObj = { val: 0 };
+    tl.to(countObj, {
+      val: 1.4,
+      duration: 1.1,
+      ease: "expo.out",
+      onUpdate: function() {
+        var el = document.getElementById("s1-number");
+        if (!el) return;
+        var v = countObj.val;
+        if (v < 0.999) {
+          el.textContent = "$" + Math.round(v * 1000) + "B";
+        } else {
+          el.textContent = "$" + v.toFixed(1) + "T";
+        }
+      },
+      onComplete: function() {
+        var el = document.getElementById("s1-number");
+        if (el) el.textContent = "$1.4T";
+      }
+    }, 0.22);
+
+    // Gold flash at count lock (~t=1.32)
+    tl.to("#s1-number", { color: "#D4A017", duration: 0.03, ease: "none" }, 1.32);
+    tl.to("#s1-number", { color: "#D8E0EE", duration: 0.03, ease: "none" }, 1.38);
+
+    // Gold underline draws left-to-right
+    tl.set("#s1-underline",  { width: "480px", scaleX: 0, transformOrigin: "left center" }, 1.32);
+    tl.to("#s1-underline",   { scaleX: 1, duration: 0.24, ease: "steps(6)" }, 1.38);
+
+    // Unit label 120ms after lock
+    tl.from("#s1-unit", { opacity: 0, y: 16, duration: 0.30, ease: "power4.out" }, 1.5);
+
+    // Shimmer sweep on number at lock
+    tl.set("#s1-shimmer", { opacity: 1 }, 1.32);
+    tl.fromTo("#s1-shimmer-beam",
+      { x: "-30%" },
+      { x: "130%", duration: 0.8, ease: "power2.inOut" },
+      1.34);
+    tl.set("#s1-shimmer", { opacity: 0 }, 2.15);
+
+    /* ══════════════════════════════════════════════════
+       SCENE 2 — 100× telecom
+    ══════════════════════════════════════════════════ */
+    hardCut("flash1", "s1", "s2", 4.65);
+
+    tl.from("#s2-eyebrow", { y: -22, opacity: 0, duration: 0.26, ease: "power4.out" }, 4.76);
+    tl.from("#s2-number",  { y: 30,  opacity: 0, duration: 0.40, ease: "power4.out" }, 4.88);
+    tl.from("#s2-label",   { opacity: 0, duration: 0.30, ease: "power2.out" }, 5.18);
+
+    // Cursor blink (finite: ~4s of blinks at 700ms cycle)
+    var s2BlinkCount = Math.ceil(3.8 / 0.7) * 2;
+    tl.to("#s2-cursor", { opacity: 1, duration: 0.001 }, 5.2);
+    tl.to("#s2-cursor", { opacity: 0, duration: 0.35, ease: "steps(1)",
+                          repeat: s2BlinkCount - 1, yoyo: true }, 5.2);
+    tl.set("#s2-cursor", { opacity: 0 }, 9.0);
+
+    /* ══════════════════════════════════════════════════
+       SCENE 3 — 3.7% → 10% adoption
+    ══════════════════════════════════════════════════ */
+    hardCut("flash2", "s2", "s3", 9.05);
+
+    tl.from("#s3-eyebrow", { y: -22, opacity: 0, duration: 0.26, ease: "power4.out" }, 9.16);
+    tl.from("#s3-old",     { x: -30, opacity: 0, duration: 0.32, ease: "power4.out" }, 9.30);
+    tl.from("#s3-arrow",   { opacity: 0, duration: 0.22, ease: "power2.out" }, 9.52);
+    tl.from("#s3-new",     { y: 30, opacity: 0, duration: 0.40, ease: "power4.out" }, 9.66);
+    tl.from("#s3-label",   { opacity: 0, duration: 0.30, ease: "power2.out" }, 10.02);
+
+    /* ══════════════════════════════════════════════════
+       SCENE 4 — OpenAI pull-quote
+    ══════════════════════════════════════════════════ */
+    hardCut("flash3", "s3", "s4", 16.35);
+
+    tl.from("#s4-eyebrow", { y: -22, opacity: 0, duration: 0.26, ease: "power4.out" }, 16.44);
+    // Pull-quote: opacity only, no y movement
+    tl.from("#s4-quote",   { opacity: 0, duration: 0.50, ease: "power4.out" }, 16.58);
+
+    // "losing" and "money" swap to fault-line (step function, word boundary)
+    tl.set("#s4-losing", { color: "#E03535" }, 20.51);
+    tl.set("#s4-money",  { color: "#E03535" }, 20.77);
+
+    // Fault-line underline draws beneath "losing money"
+    tl.set("#s4-underline", { width: "340px", scaleX: 0, transformOrigin: "left center" }, 20.77);
+    tl.to("#s4-underline",  { scaleX: 1, duration: 0.24, ease: "steps(6)" }, 20.85);
+
+    /* ══════════════════════════════════════════════════
+       SCENE 5 — 75% economists
+    ══════════════════════════════════════════════════ */
+    hardCut("flash4", "s4", "s5", 21.45);
+
+    tl.from("#s5-eyebrow", { y: -22, opacity: 0, duration: 0.26, ease: "power4.out" }, 21.54);
+    tl.from("#s5-number",  { y: 30,  opacity: 0, duration: 0.36, ease: "power4.out" }, 21.66);
+    tl.from("#s5-label",   { opacity: 0, duration: 0.28, ease: "power2.out" }, 21.92);
+
+    // "CALL THIS A BUBBLE" 300ms after label
+    tl.to("#s5-call", { opacity: 1, duration: 0.30, ease: "power4.out" }, 22.22);
+
+    // Fault-line underline
+    tl.set("#s5-underline", { width: "360px", scaleX: 0, transformOrigin: "left center", opacity: 1 }, 22.22);
+    tl.to("#s5-underline",  { scaleX: 1, duration: 0.20, ease: "steps(6)" }, 22.52);
+
+    // Cursor blink (~2.4s)
+    var s5BlinkCount = Math.ceil(2.4 / 0.7) * 2;
+    tl.to("#s5-cursor", { opacity: 1, duration: 0.001 }, 22.6);
+    tl.to("#s5-cursor", { opacity: 0, duration: 0.35, ease: "steps(1)",
+                          repeat: s5BlinkCount - 1, yoyo: true }, 22.6);
+    tl.set("#s5-cursor", { opacity: 0 }, 25.0);
+
+    /* ══════════════════════════════════════════════════
+       SCENE 6 — $650B
+    ══════════════════════════════════════════════════ */
+    hardCut("flash5", "s5", "s6", 25.05);
+
+    tl.from("#s6-eyebrow", { y: -22, opacity: 0, duration: 0.26, ease: "power4.out" }, 25.14);
+    tl.from("#s6-number",  { y: 30,  opacity: 0, duration: 0.36, ease: "power4.out" }, 25.26);
+
+    // Gold underline
+    tl.set("#s6-underline", { width: "440px", scaleX: 0, transformOrigin: "left center" }, 25.62);
+    tl.to("#s6-underline",  { scaleX: 1, duration: 0.24, ease: "steps(6)" }, 25.68);
+
+    tl.from("#s6-label", { opacity: 0, duration: 0.28, ease: "power2.out" }, 25.88);
+
+    /* ══════════════════════════════════════════════════
+       SCENE 7 — Circular capital flow
+    ══════════════════════════════════════════════════ */
+    hardCut("flash6", "s6", "s7", 29.45);
+
+    tl.from("#s7-eyebrow", { y: -22, opacity: 0, duration: 0.26, ease: "power4.out" }, 29.54);
+
+    // Three rows staggered 180ms each
+    tl.to("#s7-row1", { opacity: 1, duration: 0.001 }, 29.76);
+    tl.from("#s7-row1", { x: -24, duration: 0.40, ease: "power4.out" }, 29.76);
+
+    tl.to("#s7-row2", { opacity: 1, duration: 0.001 }, 29.94);
+    tl.from("#s7-row2", { x: -24, duration: 0.40, ease: "power4.out" }, 29.94);
+
+    tl.to("#s7-row3", { opacity: 1, duration: 0.001 }, 30.12);
+    tl.from("#s7-row3", { x: -24, duration: 0.40, ease: "power4.out" }, 30.12);
+
+    // Cursor blink (~4.7s)
+    var s7BlinkCount = Math.ceil(4.7 / 0.7) * 2;
+    tl.to("#s7-cursor", { opacity: 1, duration: 0.001 }, 30.5);
+    tl.to("#s7-cursor", { opacity: 0, duration: 0.35, ease: "steps(1)",
+                          repeat: s7BlinkCount - 1, yoyo: true }, 30.5);
+    tl.set("#s7-cursor", { opacity: 0 }, 35.2);
+
+    /* ══════════════════════════════════════════════════
+       SCENE 8 — Verdict beat
+       4-strip staggered cover (horizontal strips, slate-0)
+    ══════════════════════════════════════════════════ */
+    var S8_T = 35.25;
+
+    // Strips slide in left→right covering scene 7
+    for (var si = 0; si < 4; si++) {
+      tl.to("#v-strip-" + si, { x: 1080, duration: 0.22, ease: "power3.inOut" }, S8_T + si * 0.06);
+    }
+    // Swap scenes under cover
+    tl.set("#s7", { opacity: 0 }, S8_T + 0.28);
+    tl.set("#s8", { opacity: 1 }, S8_T + 0.28);
+    // Strips exit to right (off-frame)
+    for (var si2 = 0; si2 < 4; si2++) {
+      tl.to("#v-strip-" + si2, { x: 2160, duration: 0.22, ease: "power3.inOut" }, S8_T + 0.34 + si2 * 0.06);
+    }
+    // Reset strips off-canvas
+    tl.set("#v-strip-0,#v-strip-1,#v-strip-2,#v-strip-3", { x: -1080 }, S8_T + 0.72);
+
+    // Scene 8 entrances (after strips clear ~t=35.87+)
+    var S8E = S8_T + 0.65;
+    tl.from("#s8-eyebrow",  { y: -22, opacity: 0, duration: 0.26, ease: "power4.out" }, S8E);
+    tl.from("#s8-real",     { y: 30,  opacity: 0, duration: 0.40, ease: "power4.out" }, S8E + 0.10);
+
+    // "INFLATED PRICING" 320ms after "REAL INNOVATION"
+    tl.to("#s8-inflated", { opacity: 1, duration: 0.40, ease: "power4.out" }, S8E + 0.42);
+
+    // "THAT GAP IS THE WHOLE STORY." 400ms pause after inflated pricing
+    tl.to("#s8-gap",      { opacity: 1, duration: 0.40, ease: "power4.out" }, S8E + 0.82);
+
+    // Gold-dim underline beneath gap statement
+    tl.set("#s8-underline", { width: "560px", scaleX: 0, transformOrigin: "left center", opacity: 1 }, S8E + 1.22);
+    tl.to("#s8-underline",  { scaleX: 1, duration: 0.30, ease: "steps(6)" }, S8E + 1.26);
+
+    /* ══════════════════════════════════════════════════
+       SCENE 9 — Follow for more
+    ══════════════════════════════════════════════════ */
+    hardCut("flash8", "s8", "s9", 39.55);
+
+    tl.from("#s9-cta", { y: 20, opacity: 0, duration: 0.40, ease: "power4.out" }, 39.66);
+
+    // Folio-dim underline
+    tl.set("#s9-underline", { width: "400px", scaleX: 0, transformOrigin: "left center" }, 39.88);
+    tl.to("#s9-underline",  { scaleX: 1, duration: 0.24, ease: "steps(6)" }, 39.92);
+
+    // Final scene: fade to black (only permitted exit animation)
+    tl.to("#s9", { opacity: 0, duration: 0.6, ease: "power4.in" }, 41.93);
+
+    /* ══════════════════════════════════════════════════
+       VIGNETTE BREATHE — sine.inOut, 8s cycle, finite
+    ══════════════════════════════════════════════════ */
+    var vigCycles = Math.ceil(COMP_DURATION / 8) * 2;
+    tl.fromTo("#vignette",
+      { opacity: 0.18 },
+      { opacity: 0.26, duration: 4, ease: "sine.inOut",
+        repeat: vigCycles - 1, yoyo: true },
+      0
+    );
+
+    /* ══════════════════════════════════════════════════
+       CAPTIONS
+    ══════════════════════════════════════════════════ */
+    GROUPS.forEach(function(group, gi) {
+      var el = document.getElementById("cg-" + gi);
+      if (!el) return;
+
+      // Show group at start
+      tl.set(el, { opacity: 1, visibility: "visible" }, group.start);
+
+      // Karaoke highlight
+      group.words.forEach(function(w, wi) {
+        var wordEl = document.getElementById("cw-" + gi + "-" + wi);
+        if (!wordEl) return;
+        // Activate current word
+        tl.set(wordEl, { color: "#D4A017" }, w.start);
+        // De-activate previous word
+        if (wi > 0) {
+          var prevEl = document.getElementById("cw-" + gi + "-" + (wi - 1));
+          if (prevEl) tl.set(prevEl, { color: "#D8E0EE" }, w.start);
+        }
+      });
+
+      // Hard kill at group end
+      tl.set(el, { opacity: 0, visibility: "hidden" }, group.end);
+    });
+
+    /* ══════════════════════════════════════════════════
+       REGISTER TIMELINE
+    ══════════════════════════════════════════════════ */
+    window.__timelines = window.__timelines || {};
+    window.__timelines["ai-bubble-or-revolution"] = tl;
+  })();
+  </script>
+
+</div>
+</body>
+</html>

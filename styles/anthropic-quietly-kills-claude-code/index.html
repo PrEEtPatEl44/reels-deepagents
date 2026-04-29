@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1080" />
+  <title>Anthropic Quietly Kills Claude Code</title>
+  <style>
+    /* ── Design tokens ── */
+    :root {
+      --void-bg:        #090C10;
+      --panel-0:        #0F131A;
+      --panel-1:        #161C26;
+      --panel-2:        #1E2635;
+      --text-primary:   #D6DCE8;
+      --text-secondary: #7A8499;
+      --text-ghost:     #2D3748;
+      --strike-red:     #E03030;
+      --amber:          #E8A020;
+      --green-one:      #3DB87A;
+      --mono-surface:   #0D1117;
+      --hairline:       #253047;
+
+      --safe-top:       240px;
+      --safe-bottom:    1400px;
+      --safe-left:      180px;
+      --safe-right:     900px;
+      --safe-width:     720px;
+      --safe-height:    1160px;
+      --safe-center-x:  540px;
+      --safe-center-y:  820px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      background: #090C10;
+    }
+
+    /* ── Root composition ── */
+    #root-comp {
+      position: relative;
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      background: #090C10;
+    }
+
+    /* ── Structural hairlines (always visible) ── */
+    .hairline-rule {
+      position: absolute;
+      left: 0;
+      width: 1080px;
+      height: 1px;
+      background: #253047;
+      opacity: 0.25;
+      z-index: 2;
+      pointer-events: none;
+    }
+    #hr-720  { top: 720px; }
+    #hr-1040 { top: 1040px; }
+
+    /* ── Vignette ── */
+    #vignette {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 50%, rgba(9,12,16,0) 40%, rgba(9,12,16,0.55) 100%);
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    /* ── Scenes ── */
+    .scene {
+      position: absolute;
+      inset: 0;
+      width: 1080px;
+      height: 1920px;
+      background: #090C10;
+      opacity: 0;
+      z-index: 10;
+    }
+
+    /* ── Ghost text ── */
+    .ghost-text {
+      position: absolute;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 800;
+      color: #2D3748;
+      opacity: 0.08;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      pointer-events: none;
+      user-select: none;
+      z-index: 1;
+    }
+
+    /* ── Eyebrow / chip ── */
+    .eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 28px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #7A8499;
+    }
+    .eyebrow-breaking {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 28px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #E03030;
+      background: #161C26;
+      border: 2px solid #E03030;
+      padding: 8px 20px;
+      border-radius: 4px;
+    }
+
+    /* ══════════════════════════════════════
+       SCENE 0 — Cold Open
+       ══════════════════════════════════════ */
+    #s0-eyebrow {
+      position: absolute;
+      left: 540px;
+      top: 290px;
+      transform: translateX(-50%);
+      white-space: nowrap;
+    }
+    #s0-headline {
+      position: absolute;
+      left: 540px;
+      top: 360px;
+      transform: translateX(-50%);
+      width: 640px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 76px;
+      line-height: 1.1;
+      color: #D6DCE8;
+      text-align: center;
+      letter-spacing: -0.02em;
+      overflow: hidden;
+    }
+    /* shimmer pseudo on headline */
+    #s0-headline::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: var(--sp0, -40%);
+      width: 35%;
+      height: 100%;
+      background: linear-gradient(90deg, rgba(214,220,232,0) 0%, rgba(214,220,232,0.35) 50%, rgba(214,220,232,0) 100%);
+      pointer-events: none;
+      transform: skewX(-15deg);
+    }
+    #s0-sublabel {
+      position: absolute;
+      left: 540px;
+      top: 573px;
+      transform: translateX(-50%);
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 400;
+      font-size: 32px;
+      color: #7A8499;
+      text-align: center;
+      white-space: nowrap;
+    }
+    #s0-rule {
+      position: absolute;
+      left: 540px;
+      top: 632px;
+      width: 360px;
+      height: 1px;
+      background: #253047;
+      transform: translateX(-50%) scaleX(0);
+      transform-origin: center center;
+    }
+
+    /* ══════════════════════════════════════
+       SCENE 1 — The Incident
+       ══════════════════════════════════════ */
+    #s1-eyebrow {
+      position: absolute;
+      left: 540px;
+      top: 290px;
+      transform: translateX(-50%);
+      white-space: nowrap;
+    }
+    #s1-stat {
+      position: absolute;
+      left: 540px;
+      top: 360px;
+      transform: translateX(-50%);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 800;
+      font-size: 148px;
+      color: #D6DCE8;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      text-align: center;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+    #s1-statlabel {
+      position: absolute;
+      left: 540px;
+      top: 548px;
+      transform: translateX(-50%);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 600;
+      font-size: 36px;
+      color: #7A8499;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      text-align: center;
+      white-space: nowrap;
+    }
+    #s1-divider {
+      position: absolute;
+      left: 540px;
+      top: 652px;
+      transform: translateX(-50%);
+      width: 280px;
+      height: 1px;
+      background: #253047;
+      transform-origin: left center;
+    }
+    #s1-secondary {
+      position: absolute;
+      left: 540px;
+      top: 682px;
+      transform: translateX(-50%);
+      width: 600px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 400;
+      font-size: 34px;
+      color: #7A8499;
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    /* ══════════════════════════════════════
+       SCENE 2 — A/B Test Framing
+       ══════════════════════════════════════ */
+    #s2-eyebrow {
+      position: absolute;
+      left: 540px;
+      top: 275px;
+      transform: translateX(-50%);
+      white-space: nowrap;
+    }
+    #s2-claim {
+      position: absolute;
+      left: 540px;
+      top: 345px;
+      transform: translateX(-50%);
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 400;
+      font-size: 38px;
+      color: #7A8499;
+      background: #161C26;
+      border: 1px solid #1E2635;
+      border-radius: 4px;
+      padding: 14px 28px;
+      text-align: center;
+      white-space: nowrap;
+    }
+    #s2-dash {
+      position: absolute;
+      left: 540px;
+      top: 452px;
+      transform: translateX(-50%);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 36px;
+      color: #E03030;
+      text-align: center;
+    }
+    #s2-evidence {
+      position: absolute;
+      left: 540px;
+      top: 492px;
+      transform: translateX(-50%);
+      width: 660px;
+      background: #0D1117;
+      border-left: 3px solid #1E2635;
+      padding: 24px 32px;
+    }
+    .diff-line {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 400;
+      font-size: 34px;
+      color: #E03030;
+      line-height: 1.6;
+      opacity: 0;
+    }
+    #s2-verdict {
+      position: absolute;
+      left: 540px;
+      top: 840px;
+      transform: translateX(-50%);
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 36px;
+      color: #D6DCE8;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    /* ══════════════════════════════════════
+       SCENE 3 — VP Quote
+       ══════════════════════════════════════ */
+    #s3-eyebrow {
+      position: absolute;
+      left: 540px;
+      top: 285px;
+      transform: translateX(-50%);
+      white-space: nowrap;
+    }
+    #s3-quotemark {
+      position: absolute;
+      left: 540px;
+      top: 355px;
+      transform: translateX(-50%);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 800;
+      font-size: 120px;
+      color: #1E2635;
+      line-height: 1;
+      opacity: 0;
+    }
+    #s3-quote {
+      position: absolute;
+      left: 540px;
+      top: 438px;
+      transform: translateX(-50%);
+      width: 640px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 64px;
+      color: #D6DCE8;
+      line-height: 1.15;
+      text-align: center;
+      letter-spacing: -0.02em;
+    }
+    #s3-attribution {
+      position: absolute;
+      left: 540px;
+      top: 735px;
+      transform: translateX(-50%);
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 400;
+      font-size: 28px;
+      color: #7A8499;
+      text-align: center;
+      white-space: nowrap;
+    }
+    #s3-rule {
+      position: absolute;
+      left: 540px;
+      top: 795px;
+      width: 400px;
+      height: 1px;
+      background: #253047;
+      transform: translateX(-50%) scaleX(0);
+      transform-origin: center center;
+    }
+    #s3-interp {
+      position: absolute;
+      left: 540px;
+      top: 843px;
+      transform: translateX(-50%);
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 36px;
+      color: #E8A020;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    /* ══════════════════════════════════════
+       SCENE 4 — Assessment
+       ══════════════════════════════════════ */
+    #s4-eyebrow {
+      position: absolute;
+      left: 540px;
+      top: 275px;
+      transform: translateX(-50%);
+      white-space: nowrap;
+    }
+    .verdict-row {
+      position: absolute;
+      left: 540px;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: baseline;
+      gap: 18px;
+      opacity: 0;
+      white-space: nowrap;
+    }
+    #s4-row1 { top: 360px; }
+    #s4-row2 { top: 460px; }
+    #s4-row3 { top: 560px; }
+    #s4-row4 { top: 660px; }
+    .verdict-label {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 800;
+      font-size: 44px;
+      letter-spacing: -0.01em;
+    }
+    .verdict-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 36px;
+    }
+    .color-green { color: #3DB87A; }
+    .color-red   { color: #E03030; }
+    .color-amber { color: #E8A020; }
+
+    #s4-rule {
+      position: absolute;
+      left: 540px;
+      top: 778px;
+      width: 540px;
+      height: 1px;
+      background: #253047;
+      transform: translateX(-50%) scaleX(0);
+      transform-origin: center center;
+    }
+    #s4-summary {
+      position: absolute;
+      left: 540px;
+      top: 820px;
+      transform: translateX(-50%);
+      width: 640px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 52px;
+      color: #D6DCE8;
+      text-align: center;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+    }
+
+    /* ══════════════════════════════════════
+       GRID-PIXELATE-WIPE (Scene 4→5)
+       ══════════════════════════════════════ */
+    #grid-pixelate-wipe {
+      position: absolute;
+      inset: 0;
+      z-index: 50;
+      pointer-events: none;
+      display: grid;
+      grid-template-columns: repeat(12, 90px);
+      grid-template-rows: repeat(20, 96px);
+      gap: 0;
+    }
+    .grid-cell {
+      background: #090C10;
+      transform: scale(0);
+      transform-origin: center center;
+    }
+
+    /* ══════════════════════════════════════
+       SCENE 5 — Competitor Pricing
+       ══════════════════════════════════════ */
+    #s5-eyebrow {
+      position: absolute;
+      left: 540px;
+      top: 275px;
+      transform: translateX(-50%);
+      white-space: nowrap;
+    }
+    .price-card {
+      position: absolute;
+      left: 540px;
+      transform: translateX(-50%);
+      width: 660px;
+      background: #161C26;
+      border: 1px solid #1E2635;
+      padding: 18px 28px 14px;
+      opacity: 0;
+    }
+    .price-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .price-card-name {
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      font-size: 40px;
+      color: #D6DCE8;
+    }
+    .price-card-price {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 800;
+      font-size: 48px;
+      color: #D6DCE8;
+      letter-spacing: -0.01em;
+      flex-shrink: 0;
+    }
+    .price-card-sub {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 400;
+      font-size: 28px;
+      color: #7A8499;
+      margin-top: 4px;
+    }
+    #s5-card1 { top: 360px; }
+    #s5-card2 { top: 476px; }
+    #s5-card3 { top: 592px; border-left: 3px solid #E03030; }
+    #s5-card4 { top: 708px; }
+    #s5-card3 .price-card-price { color: #E8A020; position: relative; overflow: hidden; }
+    /* shimmer on $100/mo */
+    #s5-card3 .price-card-price::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: var(--sp5, -40%);
+      width: 40%;
+      height: 100%;
+      background: linear-gradient(90deg, rgba(232,160,32,0) 0%, rgba(232,160,32,0.4) 50%, rgba(232,160,32,0) 100%);
+      pointer-events: none;
+      transform: skewX(-15deg);
+    }
+
+    #s5-label {
+      position: absolute;
+      left: 540px;
+      top: 855px;
+      transform: translateX(-50%);
+      width: 640px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 52px;
+      color: #D6DCE8;
+      text-align: center;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    /* ══════════════════════════════════════
+       SCENE 6 — Trust Damage
+       ══════════════════════════════════════ */
+    #s6-eyebrow {
+      position: absolute;
+      left: 540px;
+      top: 275px;
+      transform: translateX(-50%);
+      white-space: nowrap;
+    }
+    #s6-lineA {
+      position: absolute;
+      left: 540px;
+      top: 372px;
+      transform: translateX(-50%);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 62px;
+      color: #D6DCE8;
+      text-align: center;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+    }
+    #s6-lineA-rule {
+      position: absolute;
+      left: 540px;
+      top: 450px;
+      width: 300px;
+      height: 1px;
+      background: #253047;
+      transform: translateX(-50%) scaleX(0);
+      transform-origin: left center;
+    }
+    #s6-lineBwrap {
+      position: absolute;
+      left: 540px;
+      top: 512px;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      display: inline-block;
+    }
+    #s6-lineBtext {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 62px;
+      color: #D6DCE8;
+      text-align: center;
+      letter-spacing: -0.02em;
+      display: inline-block;
+      position: relative;
+    }
+    #s6-strikeline {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 0%;
+      height: 2px;
+      background: #E03030;
+      transform: translateY(-50%);
+    }
+    #s6-lineC {
+      position: absolute;
+      left: 540px;
+      top: 674px;
+      transform: translateX(-50%);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 62px;
+      color: #D6DCE8;
+      text-align: center;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+    }
+    #s6-conc {
+      position: absolute;
+      left: 540px;
+      top: 793px;
+      transform: translateX(-50%);
+      width: 660px;
+      background: #0D1117;
+      border: 1px solid #1E2635;
+      padding: 32px;
+    }
+    .conc-line {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 400;
+      font-size: 34px;
+      color: #7A8499;
+      line-height: 1.55;
+    }
+
+    /* ══════════════════════════════════════
+       SCENE 7 — CTA / Follow
+       ══════════════════════════════════════ */
+    #s7-eyebrow {
+      position: absolute;
+      left: 540px;
+      top: 290px;
+      transform: translateX(-50%);
+      white-space: nowrap;
+    }
+    #s7-cta1 {
+      position: absolute;
+      left: 540px;
+      top: 380px;
+      transform: translateX(-50%);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 80px;
+      color: #D6DCE8;
+      text-align: center;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    /* shimmer on CTA */
+    #s7-cta1::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: var(--sp7, -40%);
+      width: 35%;
+      height: 100%;
+      background: linear-gradient(90deg, rgba(214,220,232,0) 0%, rgba(214,220,232,0.4) 50%, rgba(214,220,232,0) 100%);
+      pointer-events: none;
+      transform: skewX(-15deg);
+    }
+    #s7-cta2 {
+      position: absolute;
+      left: 540px;
+      top: 478px;
+      transform: translateX(-50%);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 80px;
+      color: #D6DCE8;
+      text-align: center;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+    }
+    #s7-rule {
+      position: absolute;
+      left: 540px;
+      top: 598px;
+      width: 300px;
+      height: 1px;
+      background: #253047;
+      transform: translateX(-50%) scaleX(0);
+      transform-origin: center center;
+    }
+    #s7-tag1 {
+      position: absolute;
+      left: 540px;
+      top: 648px;
+      transform: translateX(-50%);
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 42px;
+      color: #7A8499;
+      text-align: center;
+      white-space: nowrap;
+    }
+    #s7-tag2 {
+      position: absolute;
+      left: 540px;
+      top: 710px;
+      transform: translateX(-50%);
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 42px;
+      color: #E03030;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    /* ══════════════════════════════════════
+       CAPTION BAND
+       ══════════════════════════════════════ */
+    #caption-band {
+      position: absolute;
+      left: 180px;
+      top: 1250px;
+      width: 720px;
+      min-height: 100px;
+      z-index: 40;
+      pointer-events: none;
+    }
+    .caption-group {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 720px;
+      background: rgba(9,12,16,0.72);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: 8px;
+      padding: 16px 28px;
+      opacity: 0;
+      visibility: hidden;
+      text-align: center;
+      line-height: 1.35;
+    }
+    .caption-word {
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 400;
+      font-size: 46px;
+      line-height: 1.35;
+      color: #7A8499;
+      display: inline;
+    }
+    .caption-word.active {
+      font-weight: 500;
+      color: #D6DCE8;
+    }
+
+    /* ══════════════════════════════════════
+       GRAIN OVERLAY
+       ══════════════════════════════════════ */
+    #grain-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 60;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .grain-texture {
+      position: absolute;
+      inset: -50%;
+      width: 200%;
+      height: 200%;
+      opacity: 0.06;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 256px 256px;
+      animation: grain-anim 0.96s steps(8) infinite;
+    }
+    @keyframes grain-anim {
+      0%   { transform: translate(0px, 0px);   }
+      12%  { transform: translate(-4px, 3px);  }
+      25%  { transform: translate(5px, -2px);  }
+      37%  { transform: translate(-3px,-4px);  }
+      50%  { transform: translate(4px, 5px);   }
+      62%  { transform: translate(-5px, 2px);  }
+      75%  { transform: translate(3px,-5px);   }
+      87%  { transform: translate(-2px, 4px);  }
+      100% { transform: translate(0px, 0px);   }
+    }
+
+    /* ── void flash ── */
+    #scene-flash {
+      position: absolute;
+      inset: 0;
+      background: #090C10;
+      z-index: 55;
+      pointer-events: none;
+      opacity: 0;
+    }
+  </style>
+</head>
+<body>
+
+<div id="root-comp"
+     data-composition-id="root"
+     data-start="0"
+     data-duration="44.88"
+     data-width="1080"
+     data-height="1920"
+     data-track-index="0">
+
+  <!-- ── Audio ── -->
+  <audio id="el-audio"
+         data-start="0"
+         data-duration="41.88"
+         data-track-index="1"
+         data-volume="1"
+         src="narration.wav"></audio>
+
+  <!-- Structural hairlines -->
+  <div class="hairline-rule" id="hr-720"></div>
+  <div class="hairline-rule" id="hr-1040"></div>
+
+  <!-- Vignette -->
+  <div id="vignette"></div>
+
+  <!-- Void flash overlay (for hard cuts) -->
+  <div id="scene-flash"></div>
+
+  <!-- ══════════════════════════════════════
+       SCENE 0 — Cold Open  0.0 → 3.5s
+       ══════════════════════════════════════ -->
+  <div id="s0" class="scene"
+       data-start="0" data-duration="3.5" data-track-index="10">
+
+    <div class="ghost-text" style="right:120px;top:1080px;font-size:280px;transform:rotate(-3deg);opacity:0.08;">QUIETLY</div>
+
+    <div id="s0-eyebrow"><span class="eyebrow-breaking">BREAKING</span></div>
+    <div id="s0-headline">Anthropic Quietly Kills Claude Code</div>
+    <div id="s0-sublabel">$20/month &rarr; gone</div>
+    <div id="s0-rule"></div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       SCENE 1 — The Incident  3.5 → 7.5s
+       ══════════════════════════════════════ -->
+  <div id="s1" class="scene"
+       data-start="3.5" data-duration="4" data-track-index="10">
+
+    <div class="ghost-text" style="left:100px;top:255px;font-size:250px;transform:rotate(2deg);opacity:0.06;">900K</div>
+
+    <div id="s1-eyebrow"><span class="eyebrow">INCIDENT</span></div>
+    <div id="s1-stat">0</div>
+    <div id="s1-statlabel">Views in Hours</div>
+    <div id="s1-divider"></div>
+    <div id="s1-secondary">GitHub issues filed:<br>"BREAKING CHANGE"</div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       SCENE 2 — A/B Test Framing  7.5 → 13.0s
+       ══════════════════════════════════════ -->
+  <div id="s2" class="scene"
+       data-start="7.5" data-duration="5.5" data-track-index="10">
+
+    <div class="ghost-text" style="right:80px;bottom:500px;font-size:300px;transform:rotate(-2deg);opacity:0.07;">DIFF</div>
+
+    <div id="s2-eyebrow"><span class="eyebrow">CLAIM VS EVIDENCE</span></div>
+    <div id="s2-claim">&ldquo;~2% of new signups affected&rdquo;</div>
+    <div id="s2-dash">&mdash;</div>
+    <div id="s2-evidence">
+      <div class="diff-line" id="s2-diff1">- docs updated sitewide</div>
+      <div class="diff-line" id="s2-diff2">- URL changed: /pro-or-max &rarr; /max</div>
+      <div class="diff-line" id="s2-diff3">- VP language: &ldquo;structural problem&rdquo;</div>
+    </div>
+    <div id="s2-verdict">not a test. a premature rollout.</div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       SCENE 3 — VP Quote  13.0 → 17.5s
+       ══════════════════════════════════════ -->
+  <div id="s3" class="scene"
+       data-start="13" data-duration="4.5" data-track-index="10">
+
+    <div class="ghost-text" style="left:100px;top:265px;font-size:180px;transform:rotate(1deg);opacity:0.06;">STRUCTURAL</div>
+
+    <div id="s3-eyebrow"><span class="eyebrow">VP OF PRODUCT</span></div>
+    <div id="s3-quotemark">&ldquo;</div>
+    <div id="s3-quote">&ldquo;our current plans weren&rsquo;t built for this.&rdquo;</div>
+    <div id="s3-attribution">&mdash; Madhav Avasare, VP Product, Anthropic</div>
+    <div id="s3-rule"></div>
+    <div id="s3-interp">translation: this is structural.</div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       SCENE 4 — Assessment  17.5 → 22.5s
+       ══════════════════════════════════════ -->
+  <div id="s4" class="scene"
+       data-start="17.5" data-duration="5" data-track-index="10">
+
+    <div class="ghost-text" style="right:80px;bottom:470px;font-size:280px;transform:rotate(-3deg);opacity:0.07;">FLAWED</div>
+
+    <div id="s4-eyebrow"><span class="eyebrow">ASSESSMENT</span></div>
+
+    <div id="s4-row1" class="verdict-row">
+      <span class="verdict-label color-green">&#x2713; ECONOMICS</span>
+      <span class="verdict-tag color-green">REAL</span>
+    </div>
+    <div id="s4-row2" class="verdict-row">
+      <span class="verdict-label color-red">&#x2717; EXECUTION</span>
+      <span class="verdict-tag color-red">FLAWED</span>
+    </div>
+    <div id="s4-row3" class="verdict-row">
+      <span class="verdict-label color-red">&#x2717; COMMUNICATION</span>
+      <span class="verdict-tag color-red">SILENT</span>
+    </div>
+    <div id="s4-row4" class="verdict-row">
+      <span class="verdict-label color-amber">&#x26A0; COMPETITIVE RISK</span>
+      <span class="verdict-tag color-amber">HIGH</span>
+    </div>
+
+    <div id="s4-rule"></div>
+    <div id="s4-summary">the reversal bought time. not trust.</div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       SCENE 5 — Competitor Pricing  22.5 → 29.0s
+       ══════════════════════════════════════ -->
+  <div id="s5" class="scene"
+       data-start="22.5" data-duration="6.5" data-track-index="10">
+
+    <div class="ghost-text" style="right:80px;top:265px;font-size:250px;transform:rotate(2deg);opacity:0.07;">$100</div>
+
+    <div id="s5-eyebrow"><span class="eyebrow" style="letter-spacing:0.12em;">COMPETITIVE LANDSCAPE</span></div>
+
+    <div id="s5-card1" class="price-card">
+      <div class="price-card-header">
+        <span class="price-card-name">Cursor Pro</span>
+        <span class="price-card-price">$20/mo</span>
+      </div>
+      <div class="price-card-sub">Full IDE integration</div>
+    </div>
+
+    <div id="s5-card2" class="price-card">
+      <div class="price-card-header">
+        <span class="price-card-name" style="font-size:34px;">GitHub Copilot Enterprise</span>
+        <span class="price-card-price">$39/mo</span>
+      </div>
+      <div class="price-card-sub">Deep GitHub ecosystem</div>
+    </div>
+
+    <div id="s5-card3" class="price-card">
+      <div class="price-card-header">
+        <span class="price-card-name" style="font-size:36px;">Claude Max (proposed)</span>
+        <span class="price-card-price" id="s5-price100" style="--sp5:-40%;">$100/mo</span>
+      </div>
+      <div class="price-card-sub">Claude Code access</div>
+    </div>
+
+    <div id="s5-card4" class="price-card">
+      <div class="price-card-header">
+        <span class="price-card-name">Direct API</span>
+        <span class="price-card-price" style="font-size:36px;">pay-per-token</span>
+      </div>
+      <div class="price-card-sub">Flexible; may be cheaper</div>
+    </div>
+
+    <div id="s5-label">5&times; the price. needs 5&times; the value.</div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       SCENE 6 — Trust Damage  29.0 → 36.0s
+       ══════════════════════════════════════ -->
+  <div id="s6" class="scene"
+       data-start="29" data-duration="7" data-track-index="10">
+
+    <div class="ghost-text" style="left:90px;bottom:475px;font-size:260px;transform:rotate(1deg);opacity:0.06;">TRUST</div>
+
+    <div id="s6-eyebrow"><span class="eyebrow">TRUST DEFICIT</span></div>
+
+    <div id="s6-lineA">compute costs: real</div>
+    <div id="s6-lineA-rule"></div>
+
+    <div id="s6-lineBwrap">
+      <span id="s6-lineBtext">silent rollout: the mistake<span id="s6-strikeline"></span></span>
+    </div>
+
+    <div id="s6-lineC">developer trust: <span style="color:#7A8499;">damaged</span></div>
+
+    <div id="s6-conc">
+      <div class="conc-line">&ldquo;The reversal bought goodwill,</div>
+      <div class="conc-line">&nbsp;but the underlying problem</div>
+      <div class="conc-line">&nbsp;hasn&rsquo;t gone away.&rdquo;</div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       SCENE 7 — CTA / Follow  36.0 → 44.88s
+       ══════════════════════════════════════ -->
+  <div id="s7" class="scene"
+       data-start="36" data-duration="8.88" data-track-index="10">
+
+    <div class="ghost-text" style="right:80px;top:265px;font-size:240px;transform:rotate(-2deg);opacity:0.06;">FOLLOW</div>
+
+    <div id="s7-eyebrow"><span class="eyebrow" style="letter-spacing:0.12em;">AI INDUSTRY</span></div>
+    <div id="s7-cta1" style="--sp7:-40%;">Follow for more</div>
+    <div id="s7-cta2">AI industry updates</div>
+    <div id="s7-rule"></div>
+    <div id="s7-tag1">the economics are real.</div>
+    <div id="s7-tag2">the silence was the mistake.</div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       GRID-PIXELATE-WIPE (Scene 4→5 transition)
+       ══════════════════════════════════════ -->
+  <div id="grid-pixelate-wipe"></div>
+
+  <!-- ══════════════════════════════════════
+       CAPTION BAND
+       ══════════════════════════════════════ -->
+  <div id="caption-band"></div>
+
+  <!-- Grain overlay (topmost) -->
+  <div id="grain-overlay"><div class="grain-texture"></div></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+  (function () {
+    'use strict';
+
+    /* ════════════════════════════════════════════════
+       WORD TRANSCRIPT
+       ════════════════════════════════════════════════ */
+    var WORDS = [
+      { text:"Anthropic",  start:0.02,  end:0.43  },
+      { text:"briefly",    start:0.6,   end:0.89  },
+      { text:"pulled",     start:0.97,  end:1.18  },
+      { text:"Claude",     start:1.25,  end:1.58  },
+      { text:"Code",       start:1.64,  end:1.81  },
+      { text:"from",       start:1.92,  end:2.1   },
+      { text:"its",        start:2.16,  end:2.4   },
+      { text:"$20",        start:2.4,   end:2.95  },
+      { text:"Pro",        start:2.95,  end:3.19  },
+      { text:"plan,",      start:3.19,  end:3.54  },
+      { text:"and",        start:3.56,  end:3.66  },
+      { text:"the",        start:3.66,  end:3.76  },
+      { text:"developer",  start:3.76,  end:4.08  },
+      { text:"community",  start:4.08,  end:4.58  },
+      { text:"noticed",    start:4.6,   end:5.01  },
+      { text:"immediately.",start:5.18, end:6.3   },
+      { text:"One",        start:6.33,  end:6.42  },
+      { text:"tweet",      start:6.48,  end:6.73  },
+      { text:"documenting",start:6.73,  end:7.3   },
+      { text:"the",        start:7.33,  end:7.48  },
+      { text:"change",     start:7.55,  end:7.78  },
+      { text:"hit",        start:7.87,  end:7.98  },
+      { text:"900,000",    start:7.98,  end:8.99  },
+      { text:"views",      start:9.07,  end:9.34  },
+      { text:"in",         start:9.34,  end:9.45  },
+      { text:"hours.",     start:9.45,  end:9.94  },
+      { text:"GitHub",     start:9.96,  end:10.25 },
+      { text:"issues",     start:10.32, end:10.64 },
+      { text:"called",     start:10.64, end:10.99 },
+      { text:"it",         start:10.99, end:11.09 },
+      { text:"a",          start:11.09, end:11.19 },
+      { text:"breaking",   start:11.19, end:11.64 },
+      { text:"change.",    start:11.64, end:12.22 },
+      { text:"Anthropic",  start:12.24, end:12.65 },
+      { text:"tried",      start:12.81, end:13.07 },
+      { text:"to",         start:13.07, end:13.11 },
+      { text:"frame",      start:13.19, end:13.48 },
+      { text:"it",         start:13.54, end:13.61 },
+      { text:"as",         start:13.61, end:13.7  },
+      { text:"a",          start:13.7,  end:13.79 },
+      { text:"small",      start:13.79, end:14.03 },
+      { text:"A-B",        start:14.14, end:14.25 },
+      { text:"test",       start:14.29, end:14.51 },
+      { text:"affecting",  start:14.51, end:15.06 },
+      { text:"2%",         start:15.06, end:15.27 },
+      { text:"of",         start:15.31, end:15.42 },
+      { text:"new",        start:15.42, end:15.59 },
+      { text:"sign-ups,",  start:15.78, end:16.2  },
+      { text:"but",        start:16.2,  end:16.34 },
+      { text:"site-wide",  start:16.46, end:16.94 },
+      { text:"support",    start:16.96, end:17.35 },
+      { text:"docs",       start:17.35, end:17.58 },
+      { text:"were",       start:17.58, end:17.81 },
+      { text:"rewritten",  start:17.81, end:18.34 },
+      { text:"as",         start:18.34, end:18.42 },
+      { text:"if",         start:18.42, end:18.58 },
+      { text:"the",        start:18.58, end:18.73 },
+      { text:"change",     start:18.73, end:19.04 },
+      { text:"was",        start:19.09, end:19.25 },
+      { text:"permanent.", start:19.25, end:19.99 },
+      { text:"Their",      start:20.05, end:20.3  },
+      { text:"own",        start:20.3,  end:20.45 },
+      { text:"VP",         start:20.45, end:20.61 },
+      { text:"of",         start:20.61, end:20.69 },
+      { text:"Product",    start:20.69, end:21.09 },
+      { text:"admitted",   start:21.09, end:21.5  },
+      { text:"the",        start:21.59, end:21.72 },
+      { text:"current",    start:21.72, end:22.12 },
+      { text:"plans",      start:22.12, end:22.4  },
+      { text:"were",       start:22.4,  end:22.63 },
+      { text:"never",      start:22.63, end:22.91 },
+      { text:"built",      start:22.91, end:23.19 },
+      { text:"for",        start:23.19, end:23.36 },
+      { text:"agentic",    start:23.36, end:23.73 },
+      { text:"workloads,", start:23.75, end:24.53 },
+      { text:"and",        start:24.57, end:24.74 },
+      { text:"Claude",     start:24.74, end:24.97 },
+      { text:"Opus",       start:25.14, end:25.4  },
+      { text:"4",          start:25.4,  end:25.6  },
+      { text:"blew",       start:25.6,  end:25.87 },
+      { text:"up",         start:25.87, end:26    },
+      { text:"the",        start:26,    end:26.2  },
+      { text:"unit",       start:26.2,  end:26.47 },
+      { text:"economics.", start:26.47, end:27.22 },
+      { text:"The",        start:27.35, end:27.44 },
+      { text:"reversal",   start:27.5,  end:27.75 },
+      { text:"bought",     start:27.91, end:28.19 },
+      { text:"goodwill,",  start:28.19, end:28.7  },
+      { text:"but",        start:28.7,  end:28.8  },
+      { text:"the",        start:28.89, end:29    },
+      { text:"underlying", start:29,    end:29.52 },
+      { text:"problem",    start:29.55, end:29.88 },
+      { text:"hasn't",     start:29.88, end:30.18 },
+      { text:"gone",       start:30.18, end:30.37 },
+      { text:"away.",      start:30.41, end:30.69 },
+      { text:"If",         start:30.84, end:30.93 },
+      { text:"Claude",     start:30.93, end:31.25 },
+      { text:"Code",       start:31.41, end:31.51 },
+      { text:"moves",      start:31.51, end:31.71 },
+      { text:"to",         start:31.79, end:31.91 },
+      { text:"the",        start:31.91, end:32.08 },
+      { text:"$100",       start:32.13, end:32.63 },
+      { text:"max",        start:32.74, end:32.82 },
+      { text:"tier,",      start:32.82, end:33.22 },
+      { text:"Anthropic",  start:33.22, end:33.7  },
+      { text:"is",         start:33.7,  end:33.78 },
+      { text:"competing",  start:33.85, end:34.19 },
+      { text:"against",    start:34.39, end:34.68 },
+      { text:"Cursor",     start:34.68, end:34.93 },
+      { text:"Pro",        start:35.06, end:35.2  },
+      { text:"at",         start:35.23, end:35.4  },
+      { text:"$20.",       start:35.4,  end:36.38 },
+      { text:"The",        start:36.43, end:36.52 },
+      { text:"compute",    start:36.58, end:36.83 },
+      { text:"costs",      start:36.99, end:37.25 },
+      { text:"are",        start:37.25, end:37.4  },
+      { text:"real,",      start:37.43, end:37.76 },
+      { text:"the",        start:37.76, end:37.88 },
+      { text:"silent",     start:37.97, end:38.21 },
+      { text:"rollout",    start:38.32, end:38.67 },
+      { text:"was",        start:38.67, end:38.82 },
+      { text:"the",        start:38.85, end:39.01 },
+      { text:"mistake.",   start:39.01, end:39.64 },
+      { text:"Follow",     start:39.66, end:40.07 },
+      { text:"for",        start:40.24, end:40.3  },
+      { text:"more",       start:40.3,  end:40.53 },
+      { text:"AI",         start:40.62, end:40.73 },
+      { text:"industry",   start:40.73, end:41.32 },
+      { text:"updates.",   start:41.32, end:41.88 }
+    ];
+
+    /* ════════════════════════════════════════════════
+       BUILD CAPTION GROUPS
+       Break on: pause > 0.35s | punctuation end | 4-word max
+       ════════════════════════════════════════════════ */
+    function buildGroups(words) {
+      var groups = [];
+      var i = 0;
+      while (i < words.length) {
+        var chunk = [];
+        var gStart = words[i].start;
+        while (i < words.length && chunk.length < 4) {
+          chunk.push(words[i]);
+          var cur = words[i];
+          var nxt = words[i + 1];
+          i++;
+          var hasPunct = /[.!?,]$/.test(cur.text);
+          var longPause = nxt && (nxt.start - cur.end) > 0.35;
+          if (hasPunct || longPause) break;
+        }
+        groups.push({
+          words: chunk,
+          start: gStart,
+          end: chunk[chunk.length - 1].end
+        });
+      }
+      return groups;
+    }
+
+    var GROUPS = buildGroups(WORDS);
+
+    /* ── Build caption DOM ── */
+    var band = document.getElementById('caption-band');
+    GROUPS.forEach(function(g, gi) {
+      var el = document.createElement('div');
+      el.className = 'caption-group';
+      el.id = 'cg-' + gi;
+      g.words.forEach(function(w, wi) {
+        var sp = document.createElement('span');
+        sp.className = 'caption-word';
+        sp.id = 'cw-' + gi + '-' + wi;
+        sp.textContent = w.text + (wi < g.words.length - 1 ? ' ' : '');
+        el.appendChild(sp);
+      });
+      band.appendChild(el);
+    });
+
+    /* ── Build grid-pixelate-wipe cells ── */
+    var wipeEl = document.getElementById('grid-pixelate-wipe');
+    var COLS = 12, ROWS = 20;
+    for (var r = 0; r < ROWS * COLS; r++) {
+      var cell = document.createElement('div');
+      cell.className = 'grid-cell';
+      wipeEl.appendChild(cell);
+    }
+
+    /* ════════════════════════════════════════════════
+       MAIN GSAP TIMELINE
+       ════════════════════════════════════════════════ */
+    var tl = gsap.timeline({ paused: true });
+
+    /* helper: 33ms void flash between scenes */
+    function hardCut(t) {
+      tl.to('#scene-flash', { opacity: 1, duration: 0.016, ease: 'none' }, t);
+      tl.to('#scene-flash', { opacity: 0, duration: 0.016, ease: 'none' }, t + 0.016);
+    }
+
+    /* ── S0: Cold Open  0.0 → 3.5s ──────────────────── */
+    tl.set('#s0', { opacity: 1 }, 0);
+
+    tl.from('#s0-eyebrow',  { y: -14, opacity: 0, duration: 0.4,  ease: 'power3.out' }, 0.12);
+    tl.from('#s0-headline', { y:  22, opacity: 0, duration: 0.4,  ease: 'power3.out' }, 0.05);
+    tl.from('#s0-sublabel', { y:  16, opacity: 0, duration: 0.38, ease: 'power3.out' }, 0.6 );
+    // Rule draws from center outward
+    tl.to('#s0-rule', { scaleX: 1, duration: 0.5, ease: 'power2.inOut',
+                        transformOrigin: 'center center' }, 0.9);
+    // Shimmer sweep on headline t=1.6s
+    tl.fromTo('#s0-headline', { '--sp0': '-40%' }, { '--sp0': '130%', duration: 1.0, ease: 'power2.inOut' }, 1.6);
+
+    /* ── S1: The Incident  3.5 → 7.5s ────────────────── */
+    hardCut(3.5);
+    tl.set('#s0', { opacity: 0 }, 3.5);
+    tl.set('#s1', { opacity: 1 }, 3.5);
+
+    tl.from('#s1-eyebrow', { y: -12, opacity: 0, duration: 0.35, ease: 'power3.out' }, 3.65);
+
+    // 900K count-up via proxy object
+    var cProxy = { val: 0 };
+    tl.to(cProxy, {
+      val: 900000,
+      duration: 0.8,
+      ease: 'expo.out',
+      onUpdate: function() {
+        var el = document.getElementById('s1-stat');
+        if (el) el.textContent = Math.round(cProxy.val).toLocaleString();
+      }
+    }, 3.7);
+    tl.from('#s1-stat', { y: 28, opacity: 0, duration: 0.45, ease: 'power3.out' }, 3.7);
+
+    tl.from('#s1-statlabel', { y: 14, opacity: 0, duration: 0.38, ease: 'power3.out' }, 4.6);
+    tl.to('#s1-divider', {
+      scaleX: 1, duration: 0.32, ease: 'power2.inOut',
+      transformOrigin: 'left center'
+    }, 4.78);
+    tl.from('#s1-secondary', { y: 14, opacity: 0, duration: 0.38, ease: 'power2.out' }, 5.2);
+
+    /* ── S2: A/B Test Framing  7.5 → 13.0s ────────────── */
+    hardCut(7.5);
+    tl.set('#s1', { opacity: 0 }, 7.5);
+    tl.set('#s2', { opacity: 1 }, 7.5);
+
+    tl.from('#s2-eyebrow', { y: -12, opacity: 0, duration: 0.35, ease: 'power3.out' }, 7.65);
+    tl.from('#s2-claim',   { y:  18, opacity: 0, duration: 0.4,  ease: 'power3.out' }, 7.7 );
+    tl.from('#s2-dash',    {         opacity: 0, duration: 0.22, ease: 'power2.out' }, 8.1 );
+    tl.from('#s2-evidence',{ y:  12, opacity: 0, duration: 0.35, ease: 'power3.out' }, 8.3 );
+
+    // Diff lines — steps(6) typewriter
+    tl.to('#s2-diff1', { opacity: 1, duration: 0.28, ease: 'steps(6)' }, 8.5 );
+    tl.to('#s2-diff2', { opacity: 1, duration: 0.28, ease: 'steps(6)' }, 8.75);
+    tl.to('#s2-diff3', { opacity: 1, duration: 0.28, ease: 'steps(6)' }, 9.0 );
+
+    tl.from('#s2-verdict', {
+      y: 10, opacity: 0, scaleY: 0.9,
+      transformOrigin: 'center top',
+      duration: 0.32, ease: 'expo.out'
+    }, 10.2);
+
+    /* ── S3: VP Quote  13.0 → 17.5s ──────────────────── */
+    hardCut(13.0);
+    tl.set('#s2', { opacity: 0 }, 13.0);
+    tl.set('#s3', { opacity: 1 }, 13.0);
+
+    tl.from('#s3-eyebrow', { y: -12, opacity: 0, duration: 0.35, ease: 'power3.out' }, 13.1);
+    tl.to('#s3-quotemark', { opacity: 0.18, duration: 0.6, ease: 'power2.out' }, 13.2);
+    tl.from('#s3-quote',   { x: -14, opacity: 0, duration: 0.55, ease: 'power3.out' }, 13.5);
+    tl.from('#s3-attribution', { y: 10, opacity: 0, duration: 0.35, ease: 'power3.out' }, 14.8);
+    tl.to('#s3-rule', {
+      scaleX: 1, duration: 0.38, ease: 'power2.inOut',
+      transformOrigin: 'center center'
+    }, 14.9);
+    tl.from('#s3-interp', {
+      y: 8, opacity: 0, scaleY: 0.86,
+      transformOrigin: 'center center',
+      duration: 0.3, ease: 'expo.out'
+    }, 15.5);
+
+    /* ── S4: Assessment  17.5 → 22.5s ────────────────── */
+    hardCut(17.5);
+    tl.set('#s3', { opacity: 0 }, 17.5);
+    tl.set('#s4', { opacity: 1 }, 17.5);
+
+    tl.from('#s4-eyebrow', { y: -12, opacity: 0, duration: 0.35, ease: 'power3.out' }, 17.65);
+
+    ['#s4-row1','#s4-row2','#s4-row3','#s4-row4'].forEach(function(sel, i) {
+      tl.fromTo(sel,
+        { y: 14, opacity: 0 },
+        { y:  0, opacity: 1, duration: 0.28, ease: 'steps(6)' },
+        17.8 + i * 0.15
+      );
+    });
+
+    tl.to('#s4-rule', {
+      scaleX: 1, duration: 0.4, ease: 'power2.inOut',
+      transformOrigin: 'center center'
+    }, 20.6);
+    tl.from('#s4-summary', { y: 14, opacity: 0, duration: 0.4, ease: 'power3.out' }, 20.8);
+
+    /* ── S4→S5: grid-pixelate-wipe  22.5s ───────────── */
+    // Cover (center outward)
+    tl.to('.grid-cell', {
+      scale: 1,
+      duration: 0.5,
+      ease: 'power2.inOut',
+      stagger: { amount: 0.5, from: 'center' }
+    }, 22.5);
+
+    tl.set('#s4', { opacity: 0 }, 23.0);
+    tl.set('#s5', { opacity: 1 }, 23.0);
+
+    // Reveal (edges inward)
+    tl.to('.grid-cell', {
+      scale: 0,
+      duration: 0.5,
+      ease: 'power2.inOut',
+      stagger: { amount: 0.5, from: 'edges' }
+    }, 23.0);
+
+    /* ── S5: Competitor Pricing  22.5 → 29.0s ──────── */
+    tl.from('#s5-eyebrow', { y: -12, opacity: 0, duration: 0.35, ease: 'power3.out' }, 23.35);
+
+    ['#s5-card1','#s5-card2','#s5-card3','#s5-card4'].forEach(function(sel, i) {
+      tl.fromTo(sel,
+        { y: 16, opacity: 0 },
+        { y:  0, opacity: 1, duration: 0.4, ease: 'power3.out' },
+        23.25 + i * 0.08
+      );
+    });
+
+    tl.from('#s5-label', { y: 12, opacity: 0, duration: 0.4, ease: 'power3.out' }, 25.5);
+
+    // Shimmer on $100/mo at t=24.8s
+    tl.fromTo('#s5-price100',
+      { '--sp5': '-40%' },
+      { '--sp5': '130%', duration: 1.0, ease: 'power2.inOut' },
+    24.8);
+
+    /* ── S6: Trust Damage  29.0 → 36.0s ──────────────── */
+    hardCut(29.0);
+    tl.set('#s5', { opacity: 0 }, 29.0);
+    tl.set('#s6', { opacity: 1 }, 29.0);
+
+    tl.from('#s6-eyebrow', { y: -12, opacity: 0, duration: 0.35, ease: 'power3.out' }, 29.12);
+    tl.from('#s6-lineA',   { y:  18, opacity: 0, duration: 0.4,  ease: 'power3.out' }, 29.3 );
+    tl.to('#s6-lineA-rule', {
+      scaleX: 1, duration: 0.3, ease: 'power2.inOut',
+      transformOrigin: 'left center'
+    }, 29.58);
+    tl.from('#s6-lineBwrap', { y: 18, opacity: 0, duration: 0.4, ease: 'power3.out' }, 29.6);
+    // Strikethrough draws left → right
+    tl.to('#s6-strikeline', { width: '100%', duration: 0.35, ease: 'power2.inOut' }, 30.1);
+    tl.from('#s6-lineC',   { y:  18, opacity: 0, duration: 0.4,  ease: 'power3.out' }, 29.9 );
+    tl.from('#s6-conc',    { y:  14, opacity: 0, duration: 0.48, ease: 'power2.out' }, 32.0 );
+
+    /* ── S7: CTA / Follow  36.0 → 44.88s ─────────────── */
+    hardCut(36.0);
+    tl.set('#s6', { opacity: 0 }, 36.0);
+    tl.set('#s7', { opacity: 1 }, 36.0);
+
+    tl.from('#s7-eyebrow', { y: -12, opacity: 0, duration: 0.35, ease: 'power3.out' }, 36.2);
+    tl.from('#s7-cta1',    { y:  22, opacity: 0, duration: 0.45, ease: 'power3.out' }, 36.6);
+    tl.from('#s7-cta2',    { y:  22, opacity: 0, duration: 0.45, ease: 'power3.out' }, 37.0);
+    tl.to('#s7-rule', {
+      scaleX: 1, duration: 0.4, ease: 'power2.inOut',
+      transformOrigin: 'center center'
+    }, 37.4);
+    tl.from('#s7-tag1', { y: 12, opacity: 0, duration: 0.35, ease: 'power3.out' }, 38.0);
+    tl.from('#s7-tag2', { y: 12, opacity: 0, duration: 0.35, ease: 'power3.out' }, 38.4);
+
+    // Shimmer on CTA at t=37.5s
+    tl.fromTo('#s7-cta1',
+      { '--sp7': '-40%' },
+      { '--sp7': '130%', duration: 1.2, ease: 'power2.inOut' },
+    37.5);
+
+    // Idle breathing — ±3px, 5s cycle, 3 repeats (enough to cover ~36s → 44.88s)
+    tl.to('#s7-cta1', {
+      y: -3, duration: 2.5, ease: 'sine.inOut',
+      yoyo: true, repeat: 3
+    }, 39.0);
+
+    /* ════════════════════════════════════════════════
+       CAPTION TIMELINE
+       ════════════════════════════════════════════════ */
+    GROUPS.forEach(function(g, gi) {
+      var groupEl = document.getElementById('cg-' + gi);
+      if (!groupEl) return;
+
+      // Fade in group
+      tl.set(groupEl,  { visibility: 'visible', opacity: 0 }, g.start);
+      tl.to(groupEl,   { opacity: 1, duration: 0.1, ease: 'power2.out' }, g.start);
+
+      // Per-word highlight
+      g.words.forEach(function(w, wi) {
+        var id = 'cw-' + gi + '-' + wi;
+        tl.call(function(eid) {
+          var el = document.getElementById(eid);
+          if (el) { el.style.fontWeight = '500'; el.style.color = '#D6DCE8'; }
+        }, [id], w.start);
+        tl.call(function(eid) {
+          var el = document.getElementById(eid);
+          if (el) { el.style.fontWeight = '400'; el.style.color = '#7A8499'; }
+        }, [id], w.end);
+      });
+
+      // Fade out group
+      tl.to(groupEl, { opacity: 0, duration: 0.1, ease: 'power2.in' }, g.end - 0.1);
+      tl.set(groupEl, { opacity: 0, visibility: 'hidden' }, g.end);
+    });
+
+    /* ── Register ── */
+    window.__timelines = window.__timelines || {};
+    window.__timelines['root'] = tl;
+
+  }());
+  </script>
+</div>
+
+</body>
+</html>

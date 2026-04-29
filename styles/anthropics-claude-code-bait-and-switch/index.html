@@ -1,951 +1,1184 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8" />
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  <head>
+    <meta charset="UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      /* ── Design tokens ────────────────────────────────────────────── */
+      :root {
+        --void-0:        #0B0D11;
+        --void-1:        #131720;
+        --void-2:        #1C2230;
+        --signal:        #E2E8F4;
+        --signal-dim:    #7A8499;
+        --signal-ghost:  #2B3347;
+        --breach:        #FF3B3B;
+        --amber-alert:   #F59E0B;
+        --commit-green:  #22C55E;
+        --steel:         #4A5568;
 
-  body {
-    margin: 0;
-    width: 1080px;
-    height: 1920px;
-    overflow: hidden;
-    background: #0B0E11;
-    font-family: "Space Grotesk", sans-serif;
-  }
+        --safe-top:       240px;
+        --safe-bottom-px: 520px;   /* platform chrome height from bottom */
+        --safe-left:      180px;
+        --safe-right-px:  180px;
+        --safe-center-x:  540px;
+        --safe-center-y:  820px;
+        --caption-band-top: 1240px;
+      }
 
-  .scene {
-    position: absolute;
-    top: 0; left: 0;
-    width: 1080px; height: 1920px;
-    overflow: hidden;
-    background: #0B0E11;
-  }
+      /* ── Reset / base ────────────────────────────────────────────── */
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  /* Scene 1 visible by default; rest hidden */
-  #scene1 { z-index: 1; }
-  #scene2 { z-index: 2; opacity: 0; }
-  #scene3 { z-index: 3; opacity: 0; }
-  #scene4 { z-index: 4; opacity: 0; }
-  #scene5 { z-index: 5; opacity: 0; }
-  #scene6 { z-index: 6; opacity: 0; }
-  #scene7 { z-index: 7; opacity: 0; }
-  #scene8 { z-index: 8; opacity: 0; }
+      body {
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: var(--void-0);
+        font-family: "Barlow Condensed", sans-serif;
+      }
 
-  /* ── Safe-area content wrapper ── */
-  .scene-content {
-    position: absolute;
-    top: 240px; left: 60px;
-    width: 840px; height: 1160px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
-  }
+      /* ── Root composition ────────────────────────────────────────── */
+      #root {
+        position: relative;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: var(--void-0);
+      }
 
-  /* ── Vignette ── */
-  .vignette {
-    position: absolute;
-    top: 0; left: 0;
-    width: 1080px; height: 1920px;
-    background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.4) 100%);
-    pointer-events: none;
-    z-index: 50;
-  }
+      /* ── Scene base ──────────────────────────────────────────────── */
+      .scene {
+        position: absolute;
+        top: 0; left: 0;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: var(--void-0);
+      }
 
-  /* ── Grain ── */
-  .grain-texture {
-    position: absolute;
-    top: -50%; left: -50%;
-    width: 200%; height: 200%;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-    background-size: 256px 256px;
-    opacity: 0.04;
-    pointer-events: none;
-    animation: grainShift 0.8s steps(4) infinite;
-  }
-  @keyframes grainShift {
-    0%   { transform: translate(0,0); }
-    25%  { transform: translate(-64px,32px); }
-    50%  { transform: translate(32px,-64px); }
-    75%  { transform: translate(-32px,-32px); }
-    100% { transform: translate(64px,64px); }
-  }
+      /* Scenes 2+ start hidden */
+      #s2, #s3, #s4, #s5, #s6, #s7, #s8, #s9, #s-follow { opacity: 0; }
 
-  /* ── Background glows ── */
-  .bg-glow {
-    position: absolute;
-    border-radius: 50%;
-    pointer-events: none;
-    filter: blur(80px);
-  }
+      /* Scene z-order */
+      #s1       { z-index: 1; }
+      #s2       { z-index: 2; }
+      #s3       { z-index: 3; }
+      #s4       { z-index: 4; }
+      #s5       { z-index: 5; }
+      #s6       { z-index: 6; }
+      #s7       { z-index: 7; }
+      #s8       { z-index: 8; }
+      #s9       { z-index: 9; }
+      #s-follow { z-index: 10; }
 
-  /* ── Upper labels ── */
-  .upper-label {
-    position: absolute;
-    top: 300px; left: 60px;
-    width: 840px;
-    text-align: center;
-    font-family: "DM Mono", monospace;
-    font-size: 24px; font-weight: 400;
-    letter-spacing: 0.02em;
-    color: #6B7280;
-  }
+      /* ── Safe-zone content container ─────────────────────────────── */
+      /* Spans x: 180→900 (720px wide), y: 240→1400 (1160px tall)      */
+      .scene-content {
+        position: absolute;
+        left: 180px;
+        width: 720px;
+        top: 240px;
+        height: 1160px;   /* 1920 - 240 - 520 */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
 
-  /* ═══ Scene 1 — Quiet Removal ═══ */
-  #s1-hairline {
-    width: 600px; height: 1px;
-    background: rgba(107,114,128,0.2);
-    margin-bottom: 40px;
-    transform: scaleX(0);
-    transform-origin: center;
-  }
-  #s1-hero {
-    font-size: 80px; font-weight: 700;
-    letter-spacing: -0.03em;
-    color: #E2E4E8;
-    text-align: center; line-height: 1.05;
-  }
-  #s1-sub {
-    font-size: 56px; font-weight: 700;
-    letter-spacing: -0.03em;
-    color: #D94F3D;
-    text-align: center;
-    margin-top: 28px;
-  }
-  #s1-glow { top: 580px; left: 240px; width: 600px; height: 600px; background: rgba(217,79,61,0.15); }
+      /* ── Decorative: ghost word ──────────────────────────────────── */
+      .ghost-word {
+        position: absolute;
+        top: 55px;
+        right: -30px;
+        font-family: "Barlow Condensed", sans-serif;
+        font-weight: 800;
+        font-size: 340px;
+        color: var(--signal-ghost);
+        opacity: 0.03;
+        letter-spacing: 0.04em;
+        line-height: 1;
+        pointer-events: none;
+        white-space: nowrap;
+        user-select: none;
+        z-index: 0;
+      }
 
-  /* ═══ Scene 2 — The Tweet ═══ */
-  #s2-ghost {
-    position: absolute;
-    top: 520px; left: 60px;
-    width: 840px; text-align: center;
-    font-family: "Space Grotesk", sans-serif;
-    font-size: 280px; font-weight: 700;
-    color: rgba(226,228,232,0.06);
-    letter-spacing: -0.03em;
-    pointer-events: none; line-height: 1;
-  }
-  #s2-counter {
-    font-size: 150px; font-weight: 700;
-    letter-spacing: -0.03em;
-    color: #D94F3D;
-    text-align: center;
-    font-variant-numeric: tabular-nums;
-    line-height: 1;
-  }
-  #s2-views {
-    font-size: 40px; font-weight: 700;
-    letter-spacing: 0.1em;
-    color: #E2E4E8;
-    text-align: center;
-    margin-top: 12px;
-    opacity: 0;
-  }
-  #s2-glow { top: 560px; left: 200px; width: 680px; height: 600px; background: rgba(217,79,61,0.15); }
+      /* ── Decorative: void vignette ───────────────────────────────── */
+      .void-vignette {
+        position: absolute;
+        top: 0; left: 0;
+        width: 1080px;
+        height: 1920px;
+        background: radial-gradient(
+          ellipse 70% 45% at 50% 50%,
+          rgba(19,23,32,0.26) 0%,
+          transparent 70%
+        );
+        pointer-events: none;
+        animation: vignette-breathe 7s ease-in-out infinite alternate;
+        z-index: 1;
+      }
+      @keyframes vignette-breathe {
+        from { opacity: 0.77; }
+        to   { opacity: 1.0; }
+      }
 
-  /* ═══ Scene 3 — Compute Problem ═══ */
-  #s3-title {
-    font-size: 48px; font-weight: 700;
-    letter-spacing: -0.03em;
-    color: #E2E4E8;
-    text-align: center;
-    margin-bottom: 50px;
-  }
-  .s3-bar-group { width: 780px; margin-bottom: 24px; }
-  .s3-bar-label {
-    font-family: "DM Mono", monospace;
-    font-size: 22px; font-weight: 400;
-    letter-spacing: 0.02em;
-    color: #6B7280;
-    margin-bottom: 8px;
-  }
-  .s3-bar {
-    height: 60px; border-radius: 6px;
-    transform-origin: left center;
-    transform: scaleX(0);
-  }
-  #s3-bar-chat { width: 117px; background: #6B7280; }
-  #s3-bar-code { width: 741px; background: #D94F3D; }
-  .s3-grid-lines {
-    position: absolute;
-    top: 620px; left: 60px;
-    width: 840px; height: 360px;
-    pointer-events: none;
-  }
-  .s3-grid-line {
-    width: 100%; height: 1px;
-    background: rgba(107,114,128,0.08);
-    margin-bottom: 59px;
-  }
+      /* ── Decorative: scan-line ───────────────────────────────────── */
+      .scan-line {
+        position: absolute;
+        left: 0;
+        width: 1080px;
+        height: 1px;
+        background: var(--void-2);
+        opacity: 0.04;
+        pointer-events: none;
+        z-index: 2;
+      }
 
-  /* ═══ Scene 4 — A/B Test ═══ */
-  #s4-claim {
-    font-family: "DM Mono", monospace;
-    font-size: 36px; font-weight: 400;
-    letter-spacing: 0.02em;
-    color: #6B7280;
-    text-align: center;
-    margin-bottom: 40px;
-  }
-  .s4-hero-wrap { position: relative; display: inline-block; }
-  #s4-stat {
-    font-size: 150px; font-weight: 700;
-    letter-spacing: -0.03em;
-    color: #C9A84C;
-    text-align: center; line-height: 1;
-    position: relative; z-index: 1;
-  }
-  #s4-circle {
-    position: absolute;
-    top: 50%; left: 50%;
-    width: 140%; height: 170%;
-    transform: translate(-50%,-50%) rotate(-3deg) scale(0);
-    border: 3px solid #C9A84C;
-    border-radius: 50%;
-    pointer-events: none; z-index: 0;
-  }
-  #s4-glow { top: 560px; left: 240px; width: 600px; height: 600px; background: rgba(201,168,76,0.12); }
+      /* ── Corner meta (scene 1) ───────────────────────────────────── */
+      #s1-corner-meta {
+        position: absolute;
+        top: 258px;
+        left: 180px;
+        font-family: "DM Mono", monospace;
+        font-weight: 400;
+        font-size: 22px;
+        letter-spacing: 0.06em;
+        color: var(--signal-dim);
+        opacity: 0;
+      }
 
-  /* ═══ Scene 5 — The Receipts ═══ */
-  #s5-headline {
-    font-size: 48px; font-weight: 700;
-    letter-spacing: -0.03em;
-    color: #E2E4E8;
-    text-align: center;
-    margin-bottom: 50px;
-  }
-  .s5-diff-block { width: 780px; text-align: left; }
-  .s5-url-line {
-    font-family: "DM Mono", monospace;
-    font-size: 32px; font-weight: 400;
-    letter-spacing: 0.02em;
-    padding: 16px 20px;
-    position: relative;
-    display: inline-block;
-    line-height: 1.4;
-  }
-  #s5-old-url { color: #6B7280; }
-  #s5-strikethrough {
-    position: absolute;
-    top: 50%; left: 0;
-    width: 100%; height: 3px;
-    background: #D94F3D;
-    transform: scaleX(0);
-    transform-origin: left center;
-  }
-  #s5-new-url { color: #C9A84C; margin-top: 8px; }
-  #s5-highlight-bar {
-    position: absolute;
-    top: 0; left: -6px; right: -6px; bottom: 0;
-    background: rgba(201,168,76,0.15);
-    border-radius: 4px;
-    transform: scaleX(0);
-    transform-origin: left center;
-    z-index: -1;
-  }
-  .s5-scanlines {
-    position: absolute;
-    top: 0; left: 0;
-    width: 1080px; height: 1920px;
-    pointer-events: none;
-    background: repeating-linear-gradient(to bottom, transparent 0px, transparent 2px, rgba(226,228,232,0.04) 2px, rgba(226,228,232,0.04) 4px);
-  }
-  #s5-evidence-wash {
-    position: absolute;
-    top: 500px; left: 0;
-    width: 1080px; height: 600px;
-    background: radial-gradient(ellipse at center, rgba(201,168,76,0.08) 0%, transparent 70%);
-    pointer-events: none;
-  }
+      /* ── Scene 1 ─────────────────────────────────────────────────── */
+      #s1-eyebrow {
+        font-family: "Barlow Condensed", sans-serif;
+        font-weight: 600;
+        font-size: 30px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--signal-dim);
+        text-align: center;
+        opacity: 0;
+      }
+      #s1-headline {
+        font-family: "Barlow Condensed", sans-serif;
+        font-weight: 800;
+        font-size: 110px;
+        letter-spacing: -0.015em;
+        line-height: 0.92;
+        color: var(--signal);
+        text-align: center;
+        text-transform: uppercase;
+        margin-top: 32px;
+        opacity: 0;
+      }
+      #s1-price-wrap {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 24px;
+        opacity: 0;
+      }
+      #s1-price-text {
+        font-family: "Barlow Condensed", sans-serif;
+        font-weight: 800;
+        font-size: 110px;
+        letter-spacing: -0.015em;
+        line-height: 0.92;
+        color: var(--signal);
+        text-transform: uppercase;
+      }
+      #s1-strike {
+        position: absolute;
+        left: 0;
+        top: 50%;
+        width: 100%;
+        height: 6px;
+        background: var(--breach);
+        transform: scaleX(0);
+        transform-origin: left center;
+      }
 
-  /* ═══ Scene 6 — The Reversal ═══ */
-  #s6-label {
-    font-family: "DM Mono", monospace;
-    font-size: 28px; font-weight: 400;
-    letter-spacing: 0.02em;
-    color: #6B7280;
-    text-align: center;
-    margin-bottom: 30px;
-  }
-  #s6-hero {
-    font-size: 88px; font-weight: 700;
-    letter-spacing: -0.03em;
-    color: #E2E4E8;
-    text-align: center; line-height: 1;
-  }
-  #s6-underline {
-    width: 460px; height: 3px;
-    background: #D94F3D;
-    margin-top: 16px;
-    transform: scaleX(0);
-    transform-origin: left center;
-  }
-  #s6-glow { top: 600px; left: 260px; width: 560px; height: 560px; background: rgba(217,79,61,0.08); }
+      /* ── Scene 2 ─────────────────────────────────────────────────── */
+      #s2-eyebrow {
+        font-family: "Barlow Condensed", sans-serif;
+        font-weight: 600;
+        font-size: 30px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--signal-dim);
+        text-align: center;
+        opacity: 0;
+      }
+      #s2-counter {
+        font-family: "DM Mono", monospace;
+        font-weight: 600;
+        font-size: 220px;
+        letter-spacing: -0.03em;
+        color: var(--signal);
+        text-align: center;
+        line-height: 0.9;
+        margin-top: 32px;
+        opacity: 0;
+      }
+      #s2-label {
+        font-family: "DM Mono", monospace;
+        font-weight: 400;
+        font-size: 26px;
+        letter-spacing: 0.04em;
+        color: var(--signal-dim);
+        text-align: center;
+        margin-top: 40px;
+        text-transform: uppercase;
+        opacity: 0;
+      }
 
-  /* ═══ Scene 7 — The Admission ═══ */
-  .s7-quote-panel {
-    background: #141A21;
-    border-left: 3px solid #C9A84C;
-    padding: 40px;
-    max-width: 780px; width: 780px;
-    box-sizing: border-box;
-  }
-  #s7-quote {
-    font-family: "DM Mono", monospace;
-    font-size: 38px; font-weight: 400;
-    letter-spacing: 0.02em;
-    color: #E2E4E8;
-    line-height: 1.4;
-  }
-  #s7-attribution {
-    font-family: "DM Mono", monospace;
-    font-size: 22px; font-weight: 400;
-    letter-spacing: 0.02em;
-    color: #6B7280;
-    margin-top: 28px;
-  }
-  #s7-evidence-wash {
-    position: absolute;
-    top: 500px; left: 0;
-    width: 1080px; height: 600px;
-    background: radial-gradient(ellipse at center, rgba(201,168,76,0.08) 0%, transparent 70%);
-    pointer-events: none;
-  }
-  .s7-scanlines {
-    position: absolute;
-    top: 0; left: 0;
-    width: 1080px; height: 1920px;
-    pointer-events: none;
-    background: repeating-linear-gradient(to bottom, transparent 0px, transparent 2px, rgba(226,228,232,0.04) 2px, rgba(226,228,232,0.04) 4px);
-  }
+      /* ── Scene 3 ─────────────────────────────────────────────────── */
+      #s3-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--void-1);
+        border: 2px solid var(--breach);
+        border-radius: 6px;
+        padding: 16px 28px;
+        opacity: 0;
+      }
+      #s3-chip-text {
+        font-family: "Barlow Condensed", sans-serif;
+        font-weight: 800;
+        font-size: 44px;
+        letter-spacing: 0.1em;
+        color: var(--breach);
+        text-transform: uppercase;
+      }
+      #s3-source {
+        font-family: "DM Mono", monospace;
+        font-weight: 400;
+        font-size: 26px;
+        letter-spacing: 0.04em;
+        color: var(--signal-dim);
+        text-align: center;
+        margin-top: 28px;
+        opacity: 0;
+      }
 
-  /* ═══ Scene 8 — The Warning ═══ */
-  #s8-setup {
-    font-size: 40px; font-weight: 700;
-    letter-spacing: -0.03em;
-    color: #6B7280;
-    text-align: center;
-    margin-bottom: 36px;
-    max-width: 780px;
-  }
-  .shimmer-sweep-target {
-    position: relative;
-    overflow: visible;
-    display: inline-block;
-  }
-  .shimmer-sweep-target .shimmer-mask {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    pointer-events: none;
-    background: linear-gradient(
-      120deg,
-      transparent 0%,
-      transparent calc(var(--shimmer-pos, -20%) - 12%),
-      rgba(217,79,61,0.3) var(--shimmer-pos, -20%),
-      transparent calc(var(--shimmer-pos, -20%) + 12%),
-      transparent 100%
-    );
-  }
-  #s8-cta {
-    font-size: 66px; font-weight: 700;
-    letter-spacing: -0.03em;
-    color: #D94F3D;
-    text-align: center;
-    line-height: 1.15;
-    max-width: 780px;
-  }
-  #s8-glow { top: 560px; left: 200px; width: 680px; height: 600px; background: rgba(217,79,61,0.15); }
+      /* ── Scene 4 ─────────────────────────────────────────────────── */
+      #s4-eyebrow {
+        font-family: "Barlow Condensed", sans-serif;
+        font-weight: 600;
+        font-size: 30px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--signal-dim);
+        text-align: center;
+        opacity: 0;
+      }
+      #s4-stat-row {
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        margin-top: 32px;
+      }
+      #s4-num {
+        font-family: "DM Mono", monospace;
+        font-weight: 600;
+        font-size: 220px;
+        letter-spacing: -0.03em;
+        color: var(--signal);
+        line-height: 0.9;
+        opacity: 0;
+      }
+      #s4-pct {
+        font-family: "DM Mono", monospace;
+        font-weight: 600;
+        font-size: 220px;
+        letter-spacing: -0.03em;
+        color: var(--signal);
+        line-height: 0.9;
+        opacity: 0;
+      }
+      #s4-label {
+        font-family: "Barlow Condensed", sans-serif;
+        font-weight: 600;
+        font-size: 28px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--signal-dim);
+        text-align: center;
+        margin-top: 24px;
+        opacity: 0;
+      }
+      #s4-contradiction {
+        font-family: "DM Mono", monospace;
+        font-weight: 400;
+        font-size: 30px;
+        letter-spacing: 0.02em;
+        color: var(--breach);
+        text-align: center;
+        margin-top: 28px;
+        opacity: 0;
+      }
 
-  /* ═══ Instagram Follow Overlay ═══ */
-  #ig-overlay {
-    position: absolute;
-    top: 0; left: 0;
-    width: 1080px; height: 1920px;
-    z-index: 40;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    background: rgba(11,14,17,0.85);
-  }
-  .ig-follow-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 24px;
-  }
-  .ig-follow-text {
-    font-size: 64px; font-weight: 700;
-    letter-spacing: -0.03em;
-    color: #E2E4E8;
-    text-align: center;
-  }
-  .ig-follow-sub {
-    font-family: "DM Mono", monospace;
-    font-size: 28px; font-weight: 400;
-    color: #6B7280;
-    letter-spacing: 0.02em;
-  }
-  .ig-follow-btn {
-    margin-top: 8px;
-    padding: 18px 60px;
-    background: #D94F3D;
-    border-radius: 12px;
-    font-size: 32px; font-weight: 700;
-    color: #E2E4E8;
-    letter-spacing: -0.02em;
-  }
+      /* ── Scene 5 ─────────────────────────────────────────────────── */
+      #s5-quote {
+        font-family: "Literata", serif;
+        font-weight: 400;
+        font-style: italic;
+        font-size: 56px;
+        line-height: 1.25;
+        color: var(--signal);
+        text-align: center;
+        max-width: 680px;
+        opacity: 0;
+      }
+      #s5-rule {
+        width: 100%;
+        max-width: 480px;
+        height: 1px;
+        background: var(--steel);
+        margin-top: 28px;
+        opacity: 0;
+      }
+      #s5-attribution {
+        font-family: "DM Mono", monospace;
+        font-weight: 400;
+        font-size: 26px;
+        letter-spacing: 0.04em;
+        color: var(--signal-dim);
+        text-align: center;
+        margin-top: 16px;
+        opacity: 0;
+      }
 
-  /* ═══ Captions ═══ */
-  .caption-container {
-    position: absolute;
-    left: 0; width: 1080px;
-    top: 1140px; height: 200px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 30;
-    pointer-events: none;
-  }
-  .caption-group {
-    position: absolute;
-    width: 860px;
-    text-align: center;
-    font-family: "Space Grotesk", sans-serif;
-    font-size: 48px; font-weight: 700;
-    letter-spacing: -0.02em;
-    color: #E2E4E8;
-    text-shadow: 0 2px 12px rgba(0,0,0,0.7);
-    opacity: 0; visibility: hidden;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0 12px;
-    line-height: 1.3;
-  }
-  .caption-word { display: inline-block; }
-  .caption-word.number-word {
-    color: #D94F3D;
-    transform: scale(1.15);
-    display: inline-block;
-  }
-  .caption-word.evidence-word { color: #C9A84C; }
-  .caption-word.accent-word { color: #D94F3D; }
-</style>
-</head>
-<body>
-<div id="root" data-composition-id="main" data-width="1080" data-height="1920" data-start="0" data-duration="34.43">
+      /* ── Scene 6 ─────────────────────────────────────────────────── */
+      #s6-line1 {
+        font-family: "Barlow Condensed", sans-serif;
+        font-weight: 800;
+        font-size: 110px;
+        letter-spacing: -0.015em;
+        line-height: 0.92;
+        color: var(--signal);
+        text-align: center;
+        text-transform: uppercase;
+        opacity: 0;
+      }
+      #s6-line2 {
+        font-family: "Barlow Condensed", sans-serif;
+        font-weight: 800;
+        font-size: 110px;
+        letter-spacing: -0.015em;
+        line-height: 0.92;
+        color: var(--breach);
+        text-align: center;
+        text-transform: uppercase;
+        margin-top: 16px;
+        opacity: 0;
+      }
 
-  <!-- ═══ Audio ═══ -->
-  <audio id="narration" data-start="0" data-duration="31.43" data-track-index="10" src="narration.wav" data-volume="1"></audio>
+      /* ── Scene 7 ─────────────────────────────────────────────────── */
+      .s7-item {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        width: 100%;
+        max-width: 680px;
+        gap: 20px;
+        opacity: 0;
+      }
+      .s7-bullet {
+        flex-shrink: 0;
+        width: 12px;
+        height: 4px;
+        background: var(--breach);
+        transform-origin: left center;
+        transform: scaleX(0);
+      }
+      .s7-text {
+        font-family: "Barlow Condensed", sans-serif;
+        font-weight: 600;
+        font-size: 72px;
+        letter-spacing: -0.01em;
+        line-height: 1.0;
+        color: var(--signal);
+        text-transform: uppercase;
+      }
+      #s7-verdict {
+        font-family: "Barlow Condensed", sans-serif;
+        font-weight: 800;
+        font-size: 72px;
+        letter-spacing: -0.01em;
+        line-height: 1.05;
+        color: var(--signal);
+        text-align: center;
+        max-width: 680px;
+        margin-top: 36px;
+        opacity: 0;
+      }
+      #s7-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 28px;
+        width: 100%;
+      }
 
-  <!-- ═══ Scene 1 — The Quiet Removal (0–5.8s) ═══ -->
-  <div id="scene1" class="scene" data-start="0" data-duration="5.8" data-track-index="0">
-    <div id="s1-glow" class="bg-glow"></div>
-    <div class="scene-content">
-      <div id="s1-hairline"></div>
-      <div id="s1-hero">QUIETLY<br>REMOVED</div>
-      <div id="s1-sub">$20 PRO PLAN</div>
-    </div>
-    <div class="upper-label" id="s1-label">ANTHROPIC · CLAUDE CODE</div>
-  </div>
+      /* ── Scene 8 ─────────────────────────────────────────────────── */
+      #s8-rev-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 24px;
+        width: 100%;
+      }
+      #s8-green-bar {
+        width: 4px;
+        height: 80px;
+        background: var(--commit-green);
+        transform-origin: top center;
+        transform: scaleY(0);
+        flex-shrink: 0;
+      }
+      #s8-reversed {
+        font-family: "Barlow Condensed", sans-serif;
+        font-weight: 800;
+        font-size: 110px;
+        letter-spacing: -0.015em;
+        line-height: 0.92;
+        color: var(--signal);
+        text-align: center;
+        text-transform: uppercase;
+        opacity: 0;
+      }
+      #s8-unresolved-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 48px;
+        opacity: 0;
+      }
+      #s8-unresolved {
+        font-family: "Barlow Condensed", sans-serif;
+        font-weight: 800;
+        font-size: 148px;
+        letter-spacing: -0.02em;
+        line-height: 0.90;
+        color: var(--signal);
+        text-align: center;
+        text-transform: uppercase;
+      }
+      #s8-underline {
+        height: 4px;
+        width: 100%;
+        background: var(--breach);
+        transform-origin: left center;
+        transform: scaleX(0);
+        margin-top: 10px;
+      }
 
-  <!-- ═══ Scene 2 — The Tweet (5.8–9.2s) ═══ -->
-  <div id="scene2" class="scene" data-start="5.8" data-duration="3.4" data-track-index="0">
-    <div id="s2-glow" class="bg-glow"></div>
-    <div id="s2-ghost">900K</div>
-    <div class="scene-content">
-      <div id="s2-counter">0</div>
-      <div id="s2-views">VIEWS</div>
-    </div>
-    <div class="upper-label" id="s2-label">ONE TWEET</div>
-  </div>
+      /* ── Scene 9 ─────────────────────────────────────────────────── */
+      #s9-cta {
+        font-family: "Barlow Condensed", sans-serif;
+        font-weight: 600;
+        font-size: 72px;
+        letter-spacing: -0.01em;
+        line-height: 1.1;
+        color: var(--signal-dim);
+        text-align: center;
+        max-width: 680px;
+        opacity: 0;
+      }
+      #s9-cta strong {
+        font-weight: 800;
+        color: var(--signal);
+      }
+      #s9-underline {
+        height: 2px;
+        width: 100%;
+        max-width: 480px;
+        background: var(--signal-dim);
+        transform-origin: left center;
+        transform: scaleX(0);
+        margin-top: 24px;
+      }
 
-  <!-- ═══ Scene 3 — The Compute Problem (9.2–13.6s) ═══ -->
-  <div id="scene3" class="scene" data-start="9.2" data-duration="4.4" data-track-index="0">
-    <div class="s3-grid-lines">
-      <div class="s3-grid-line"></div>
-      <div class="s3-grid-line"></div>
-      <div class="s3-grid-line"></div>
-      <div class="s3-grid-line"></div>
-      <div class="s3-grid-line"></div>
-      <div class="s3-grid-line"></div>
-    </div>
-    <div class="scene-content">
-      <div id="s3-title">ORDERS OF MAGNITUDE</div>
-      <div class="s3-bar-group">
-        <div class="s3-bar-label">CHAT</div>
-        <div id="s3-bar-chat" class="s3-bar"></div>
-      </div>
-      <div class="s3-bar-group">
-        <div class="s3-bar-label">CLAUDE CODE</div>
-        <div id="s3-bar-code" class="s3-bar"></div>
-      </div>
-    </div>
-    <div class="upper-label" id="s3-label">COMPUTE COST</div>
-  </div>
+      /* ── Follow overlay ──────────────────────────────────────────── */
+      #follow-content {
+        position: absolute;
+        left: 180px;
+        width: 720px;
+        top: 240px;
+        height: 1160px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 32px;
+      }
+      #follow-eyebrow {
+        font-family: "Barlow Condensed", sans-serif;
+        font-weight: 600;
+        font-size: 30px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--signal-dim);
+        text-align: center;
+        opacity: 0;
+      }
+      #follow-main {
+        font-family: "Barlow Condensed", sans-serif;
+        font-weight: 800;
+        font-size: 148px;
+        letter-spacing: -0.02em;
+        line-height: 0.90;
+        color: var(--signal);
+        text-align: center;
+        text-transform: uppercase;
+        opacity: 0;
+      }
+      #follow-rule {
+        width: 280px;
+        height: 2px;
+        background: var(--signal-dim);
+        transform-origin: center center;
+        transform: scaleX(0);
+      }
+      #follow-sub {
+        font-family: "Barlow Condensed", sans-serif;
+        font-weight: 600;
+        font-size: 36px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--signal-dim);
+        text-align: center;
+        opacity: 0;
+      }
 
-  <!-- ═══ Scene 4 — The A/B Test (13.6–16.3s) ═══ -->
-  <div id="scene4" class="scene" data-start="13.6" data-duration="2.7" data-track-index="0">
-    <div id="s4-glow" class="bg-glow"></div>
-    <div class="scene-content">
-      <div id="s4-claim">"A/B TEST"</div>
-      <div class="s4-hero-wrap">
-        <div id="s4-stat">2%</div>
-        <div id="s4-circle"></div>
-      </div>
-    </div>
-    <div class="upper-label" id="s4-label">ANTHROPIC'S CLAIM</div>
-  </div>
+      /* ── Caption layer ───────────────────────────────────────────── */
+      #caption-layer {
+        position: absolute;
+        top: 0; left: 0;
+        width: 1080px;
+        height: 1920px;
+        pointer-events: none;
+        z-index: 50;
+      }
+      .caption-group {
+        position: absolute;
+        left: 180px;
+        width: 720px;
+        top: 1240px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px 32px;
+        background: rgba(19, 23, 32, 0.88);
+        border-radius: 8px;
+        opacity: 0;
+        visibility: hidden;
+      }
+      .caption-text {
+        font-family: "DM Mono", monospace;
+        font-weight: 600;
+        font-size: 50px;
+        letter-spacing: -0.01em;
+        line-height: 1.15;
+        color: var(--signal);
+        text-align: center;
+        max-width: 680px;
+      }
 
-  <!-- ═══ Scene 5 — The Receipts (16.3–20.7s) ═══ -->
-  <div id="scene5" class="scene" data-start="16.3" data-duration="4.4" data-track-index="0">
-    <div id="s5-evidence-wash"></div>
-    <div class="s5-scanlines"></div>
-    <div class="scene-content">
-      <div id="s5-headline">SUPPORT DOCS REWRITTEN</div>
-      <div class="s5-diff-block">
-        <div id="s5-old-url" class="s5-url-line">
-          <span id="s5-old-text">…/pro-or-max-plan</span>
-          <div id="s5-strikethrough"></div>
+      /* ── Grain overlay ───────────────────────────────────────────── */
+      #grain-overlay {
+        position: absolute;
+        top: 0; left: 0;
+        width: 1080px;
+        height: 1920px;
+        pointer-events: none;
+        z-index: 100;
+        overflow: hidden;
+      }
+      .grain-texture {
+        position: absolute;
+        top: -50%; left: -50%;
+        width: 200%;
+        height: 200%;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+        background-size: 256px 256px;
+        opacity: 0.07;
+        animation: grain-shift 0.6s steps(10) infinite;
+      }
+      @keyframes grain-shift {
+        0%   { transform: translate(0,    0   ); }
+        10%  { transform: translate(-3%, -5%  ); }
+        20%  { transform: translate( 4%,  2%  ); }
+        30%  { transform: translate(-2%,  6%  ); }
+        40%  { transform: translate( 5%, -3%  ); }
+        50%  { transform: translate(-4%,  4%  ); }
+        60%  { transform: translate( 3%, -6%  ); }
+        70%  { transform: translate(-5%,  1%  ); }
+        80%  { transform: translate( 2%,  5%  ); }
+        90%  { transform: translate(-1%, -4%  ); }
+        100% { transform: translate( 3%,  2%  ); }
+      }
+
+      /* ── Void flash (hard-cut blank) ─────────────────────────────── */
+      #void-flash {
+        position: absolute;
+        top: 0; left: 0;
+        width: 1080px;
+        height: 1920px;
+        background: var(--void-0);
+        opacity: 0;
+        pointer-events: none;
+        z-index: 300;
+      }
+
+      /* ── Wipe blocks for scene-6 staggered-block cover ───────────── */
+      .wipe-block {
+        position: absolute;
+        left: 0;
+        width: 1080px;
+        background: var(--void-0);
+        opacity: 0;
+        z-index: 200;
+      }
+      #wb0 { top:    0px; height: 320px; }
+      #wb1 { top:  320px; height: 320px; }
+      #wb2 { top:  640px; height: 320px; }
+      #wb3 { top:  960px; height: 320px; }
+      #wb4 { top: 1280px; height: 320px; }
+      #wb5 { top: 1600px; height: 320px; }
+
+      /* ── Blinking cursor ─────────────────────────────────────────── */
+      .cursor-blink {
+        display: inline-block;
+        width: 2px;
+        height: 26px;
+        background: var(--signal-dim);
+        vertical-align: middle;
+        margin-left: 6px;
+        animation: blink 0.6s steps(1) infinite;
+      }
+      @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50%       { opacity: 0; }
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-width="1080"
+      data-height="1920"
+      data-start="0"
+      data-duration="43.2"
+    >
+      <!-- ── AUDIO ──────────────────────────────────────────────────── -->
+      <audio
+        id="narration"
+        data-start="0"
+        data-duration="40.2"
+        data-track-index="0"
+        src="narration.wav"
+        data-volume="1"
+      ></audio>
+
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <!-- SCENE 1 — "Anthropic quietly pulled Claude Code"  0→6.0s   -->
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <div id="s1" class="scene">
+        <div class="ghost-word">REMOVED</div>
+        <div class="void-vignette"></div>
+        <div class="scan-line" id="sl1" style="top:500px;"></div>
+
+        <div id="s1-corner-meta">INCIDENT · 2026-04-22 · SRC: ARS TECHNICA</div>
+
+        <div class="scene-content">
+          <div id="s1-eyebrow">ANTHROPIC</div>
+          <div id="s1-headline">CLAUDE CODE<br>QUIETLY PULLED</div>
+          <div id="s1-price-wrap">
+            <span id="s1-price-text">$20 PRO PLAN</span>
+            <div id="s1-strike"></div>
+          </div>
         </div>
-        <div id="s5-new-url" class="s5-url-line">
-          <span id="s5-new-text">…/max-plan</span>
-          <div id="s5-highlight-bar"></div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <!-- SCENE 2 — "900,000 views"                        6.0→9.47s -->
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <div id="s2" class="scene">
+        <div class="ghost-word">900K</div>
+        <div class="void-vignette"></div>
+        <div class="scan-line" id="sl2" style="top:490px;"></div>
+
+        <div class="scene-content">
+          <div id="s2-eyebrow">DEVELOPER RESPONSE</div>
+          <div id="s2-counter">0</div>
+          <div id="s2-label">TWEET VIEWS · HOURS: 4</div>
         </div>
       </div>
-    </div>
-    <div class="upper-label" id="s5-label" style="color:#C9A84C">THE EVIDENCE</div>
-  </div>
 
-  <!-- ═══ Scene 6 — The Reversal (20.7–22.6s) ═══ -->
-  <div id="scene6" class="scene" data-start="20.7" data-duration="1.9" data-track-index="0">
-    <div id="s6-glow" class="bg-glow"></div>
-    <div class="scene-content">
-      <div id="s6-label">AFTER THE BACKLASH</div>
-      <div id="s6-hero">REVERSED</div>
-      <div id="s6-underline"></div>
-    </div>
-  </div>
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <!-- SCENE 3 — "GitHub breaking change"              9.47→11.75s -->
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <div id="s3" class="scene">
+        <div class="ghost-word">BREAKING</div>
+        <div class="void-vignette"></div>
+        <div class="scan-line" id="sl3" style="top:510px;"></div>
 
-  <!-- ═══ Scene 7 — The Admission (22.6–26.7s) ═══ -->
-  <div id="scene7" class="scene" data-start="22.6" data-duration="4.1" data-track-index="0">
-    <div id="s7-evidence-wash"></div>
-    <div class="s7-scanlines"></div>
-    <div class="scene-content">
-      <div class="s7-quote-panel" id="s7-panel">
-        <div id="s7-quote">"our current plans weren't built for this"</div>
-        <div id="s7-attribution">— MADHAV AVASARE, VP OF PRODUCT</div>
+        <div class="scene-content" style="gap:0;">
+          <div id="s3-chip">
+            <span id="s3-chip-text">BREAKING CHANGE</span>
+          </div>
+          <div id="s3-source">
+            github.com/anthropics/claude-code · issue #opened<span class="cursor-blink"></span>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="upper-label" id="s7-label" style="color:#C9A84C">THE ADMISSION</div>
-  </div>
 
-  <!-- ═══ Scene 8 — The Warning (26.7–34.43s) ═══ -->
-  <div id="scene8" class="scene" data-start="26.7" data-duration="7.73" data-track-index="0">
-    <div id="s8-glow" class="bg-glow"></div>
-    <div class="scene-content">
-      <div id="s8-setup">THE PRICING CHANGE IS COMING BACK</div>
-      <div class="shimmer-sweep-target" id="s8-shimmer">
-        <div id="s8-cta">EVALUATE YOUR<br>ALTERNATIVES</div>
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <!-- SCENE 4 — "A/B test · 2% · docs rewritten"    11.75→20.17s -->
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <div id="s4" class="scene">
+        <div class="ghost-word" style="font-size:260px; top:70px;">A/B</div>
+        <div class="void-vignette"></div>
+        <div class="scan-line" id="sl4" style="top:505px;"></div>
+
+        <div class="scene-content">
+          <div id="s4-eyebrow">ANTHROPIC CLAIMS</div>
+          <div id="s4-stat-row">
+            <div id="s4-num">2</div>
+            <div id="s4-pct">%</div>
+          </div>
+          <div id="s4-label">OF NEW SIGNUPS</div>
+          <div id="s4-contradiction">(SITEWIDE DOCS REWRITTEN)</div>
+        </div>
       </div>
-    </div>
-  </div>
 
-  <!-- ═══ Instagram Follow Overlay ═══ -->
-  <div id="ig-overlay">
-    <div class="ig-follow-card">
-      <div class="ig-follow-text">Follow for more</div>
-      <div class="ig-follow-sub">tech news you need to hear</div>
-      <div class="ig-follow-btn">FOLLOW</div>
-    </div>
-  </div>
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <!-- SCENE 5 — "VP admitted"                        20.17→25.27s -->
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <div id="s5" class="scene">
+        <div class="ghost-word">ADMITTED</div>
+        <div class="void-vignette"></div>
+        <div class="scan-line" id="sl5" style="top:495px;"></div>
 
-  <!-- ═══ Captions ═══ -->
-  <div class="caption-container" id="caption-layer"></div>
+        <div class="scene-content" style="gap:0;">
+          <div id="s5-quote">"our current plans weren't built for this."</div>
+          <div id="s5-rule"></div>
+          <div id="s5-attribution">— MADHAV AVASARE · VP PRODUCT · ANTHROPIC</div>
+        </div>
+      </div>
 
-  <!-- ═══ Global overlays ═══ -->
-  <div class="vignette"></div>
-  <div id="grain-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:100;overflow:hidden;">
-    <div class="grain-texture"></div>
-  </div>
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <!-- SCENE 6 — VERDICT                              25.27→27.73s -->
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <div id="s6" class="scene">
+        <div class="ghost-word">VERDICT</div>
+        <div class="void-vignette"></div>
+        <div class="scan-line" id="sl6" style="top:500px;"></div>
 
-</div>
+        <div class="scene-content" style="gap:0;">
+          <div id="s6-line1">ECONOMICS: REAL</div>
+          <div id="s6-line2">EXECUTION: NOT.</div>
+        </div>
+      </div>
 
-<script>
-window.__timelines = window.__timelines || {};
-var tl = gsap.timeline({ paused: true });
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <!-- SCENE 7 — Failure list → trust crisis          27.73→34.75s -->
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <div id="s7" class="scene">
+        <div class="ghost-word" style="font-size:260px; top:65px;">TRUST</div>
+        <div class="void-vignette"></div>
+        <div class="scan-line" id="sl7" style="top:510px;"></div>
 
-/* ═══════════════════════════════════════
-   SCENE TIMINGS
-   ═══════════════════════════════════════ */
-var S1 = 0, S2 = 5.8, S3 = 9.2, S4 = 13.6, S5 = 16.3, S6 = 20.7, S7 = 22.6, S8 = 26.7;
+        <div class="scene-content">
+          <div id="s7-content">
+            <div class="s7-item" id="s7-item1">
+              <div class="s7-bullet" id="s7-b1"></div>
+              <div class="s7-text">SILENT REMOVALS</div>
+            </div>
+            <div class="s7-item" id="s7-item2">
+              <div class="s7-bullet" id="s7-b2"></div>
+              <div class="s7-text">RETROACTIVE FRAMING</div>
+            </div>
+            <div class="s7-item" id="s7-item3">
+              <div class="s7-bullet" id="s7-b3"></div>
+              <div class="s7-text">ZERO GRANDFATHERING</div>
+            </div>
+            <div id="s7-verdict">= A TRUST CRISIS.</div>
+          </div>
+        </div>
+      </div>
 
-/* ═══════════════════════════════════════
-   SCENE 1 — The Quiet Removal (0–5.8s)
-   ═══════════════════════════════════════ */
-tl.fromTo("#s1-glow", { scale: 1 }, { scale: 1.05, duration: 3, ease: "sine.inOut", yoyo: true, repeat: 1 }, S1);
-tl.to("#s1-hairline", { scaleX: 1, duration: 0.3, ease: "expo.out" }, S1 + 0.1);
-tl.from("#s1-hero", { y: -30, opacity: 0, duration: 0.4, ease: "power3.out" }, S1 + 0.2);
-tl.from("#s1-sub", { y: -20, opacity: 0, duration: 0.35, ease: "power2.out" }, S1 + 0.35);
-tl.from("#s1-label", { opacity: 0, duration: 0.3, ease: "power1.out" }, S1 + 0.2);
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <!-- SCENE 8 — Reversed / Unresolved                34.75→37.93s -->
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <div id="s8" class="scene">
+        <div class="ghost-word">REVERSED</div>
+        <div class="void-vignette"></div>
+        <div class="scan-line" id="sl8" style="top:503px;"></div>
 
-/* ═══════════════════════════════════════
-   TRANSITION 1→2  Push slide LEFT 0.3s
-   ═══════════════════════════════════════ */
-tl.to("#scene1", { x: -1080, duration: 0.3, ease: "power3.inOut" }, S2);
-tl.fromTo("#scene2", { x: 1080, opacity: 1 }, { x: 0, duration: 0.3, ease: "power3.inOut" }, S2);
+        <div class="scene-content" style="gap:0;">
+          <div id="s8-rev-row">
+            <div id="s8-green-bar"></div>
+            <div id="s8-reversed">REVERSED</div>
+          </div>
+          <div id="s8-unresolved-wrap">
+            <div id="s8-unresolved">UNRESOLVED</div>
+            <div id="s8-underline"></div>
+          </div>
+        </div>
+      </div>
 
-/* ═══════════════════════════════════════
-   SCENE 2 — The Tweet (5.8–9.2s)
-   ═══════════════════════════════════════ */
-tl.fromTo("#s2-ghost", { y: 0 }, { y: -20, duration: 3.4, ease: "none" }, S2);
-tl.fromTo("#s2-glow", { scale: 1 }, { scale: 1.08, duration: 3, ease: "sine.inOut" }, S2);
-tl.from("#s2-label", { opacity: 0, duration: 0.2, ease: "power1.out" }, S2 + 0.1);
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <!-- SCENE 9 — Follow CTA                           37.93→40.2s  -->
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <div id="s9" class="scene">
+        <div class="ghost-word">FOLLOW</div>
+        <div class="void-vignette"></div>
+        <div class="scan-line" id="sl9" style="top:497px;"></div>
 
-/* Counter 0→900K */
-var counterObj = { val: 0 };
-tl.to(counterObj, {
-  val: 900000,
-  duration: 0.6,
-  ease: "power2.out",
-  onUpdate: function() {
-    var el = document.getElementById("s2-counter");
-    var v = Math.round(counterObj.val);
-    if (v >= 900000) { el.textContent = "900K"; }
-    else if (v >= 1000) { el.textContent = Math.round(v / 1000) + "K"; }
-    else { el.textContent = String(v); }
-  }
-}, S2 + 0.15);
-tl.to("#s2-views", { opacity: 1, duration: 0.25, ease: "power2.out" }, S2 + 0.8);
+        <div class="scene-content" style="gap:0;">
+          <div id="s9-cta">
+            FOLLOW FOR MORE<br><strong>AI INDUSTRY</strong><br>COVERAGE.
+          </div>
+          <div id="s9-underline"></div>
+        </div>
+      </div>
 
-/* ═══════════════════════════════════════
-   TRANSITION 2→3  Push slide LEFT 0.3s
-   ═══════════════════════════════════════ */
-tl.to("#scene2", { x: -1080, duration: 0.3, ease: "power3.inOut" }, S3);
-tl.fromTo("#scene3", { x: 1080, opacity: 1 }, { x: 0, duration: 0.3, ease: "power3.inOut" }, S3);
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <!-- FOLLOW OVERLAY                                  40.2→43.2s  -->
+      <!-- ═══════════════════════════════════════════════════════════ -->
+      <div id="s-follow" class="scene">
+        <div class="void-vignette"></div>
+        <div id="follow-content">
+          <div id="follow-eyebrow">MORE AI INDUSTRY NEWS</div>
+          <div id="follow-main">FOLLOW<br>NOW</div>
+          <div id="follow-rule"></div>
+          <div id="follow-sub">FOR THE FULL PICTURE</div>
+        </div>
+      </div>
 
-/* ═══════════════════════════════════════
-   SCENE 3 — Compute Problem (9.2–13.6s)
-   ═══════════════════════════════════════ */
-tl.from("#s3-label", { opacity: 0, duration: 0.2, ease: "power1.out" }, S3 + 0.1);
-tl.from(".s3-bar-label", { opacity: 0, duration: 0.2, ease: "power1.out", stagger: 0.15 }, S3 + 0.2);
-tl.to("#s3-bar-chat", { scaleX: 1, duration: 0.3, ease: "power2.out" }, S3 + 0.25);
-tl.to("#s3-bar-code", { scaleX: 1, duration: 0.5, ease: "power2.out" }, S3 + 0.45);
-tl.from("#s3-title", { opacity: 0, y: 20, duration: 0.35, ease: "power3.out" }, S3 + 0.95);
+      <!-- ── WIPE BLOCKS (scene-6 staggered-block cover) ───────────── -->
+      <div id="wb0" class="wipe-block"></div>
+      <div id="wb1" class="wipe-block"></div>
+      <div id="wb2" class="wipe-block"></div>
+      <div id="wb3" class="wipe-block"></div>
+      <div id="wb4" class="wipe-block"></div>
+      <div id="wb5" class="wipe-block"></div>
 
-/* ═══════════════════════════════════════
-   TRANSITION 3→4  Squeeze 0.3s
-   ═══════════════════════════════════════ */
-tl.to("#scene3", { scaleX: 0, transformOrigin: "left center", duration: 0.3, ease: "power2.inOut" }, S4);
-tl.fromTo("#scene4",
-  { scaleX: 0, transformOrigin: "right center", opacity: 1 },
-  { scaleX: 1, duration: 0.3, ease: "power2.inOut" }, S4 + 0.05);
-tl.set("#scene3", { opacity: 0 }, S4 + 0.35);
+      <!-- ── VOID FLASH ─────────────────────────────────────────────── -->
+      <div id="void-flash"></div>
 
-/* ═══════════════════════════════════════
-   SCENE 4 — A/B Test (13.6–16.3s)
-   ═══════════════════════════════════════ */
-tl.fromTo("#s4-glow", { scale: 1 }, { scale: 1.05, duration: 2.7, ease: "sine.inOut" }, S4);
-tl.from("#s4-label", { opacity: 0, duration: 0.2, ease: "power1.out" }, S4 + 0.1);
-tl.from("#s4-claim", { opacity: 0, duration: 0.25, ease: "power2.out" }, S4 + 0.15);
-tl.from("#s4-stat", { scale: 0.8, opacity: 0, duration: 0.25, ease: "back.out(1.4)" }, S4 + 0.25);
-tl.to("#s4-circle", { scale: 1, rotation: -3, duration: 0.5, ease: "power2.inOut", transformOrigin: "center center" }, S4 + 0.55);
+      <!-- ── CAPTION LAYER ──────────────────────────────────────────── -->
+      <div id="caption-layer"></div>
 
-/* ═══════════════════════════════════════
-   TRANSITION 4→5  Push slide LEFT 0.3s
-   ═══════════════════════════════════════ */
-tl.to("#scene4", { x: -1080, duration: 0.3, ease: "power3.inOut" }, S5);
-tl.fromTo("#scene5", { x: 1080, opacity: 1 }, { x: 0, duration: 0.3, ease: "power3.inOut" }, S5);
+      <!-- ── GRAIN OVERLAY ──────────────────────────────────────────── -->
+      <div id="grain-overlay">
+        <div class="grain-texture"></div>
+      </div>
+    </div><!-- /#root -->
 
-/* ═══════════════════════════════════════
-   SCENE 5 — The Receipts (16.3–20.7s)
-   ═══════════════════════════════════════ */
-tl.fromTo(".s5-scanlines", { y: 0 }, { y: -40, duration: 4.4, ease: "none" }, S5);
-tl.from("#s5-label", { opacity: 0, duration: 0.2, ease: "power1.out" }, S5 + 0.1);
-tl.from("#s5-headline", { x: -40, opacity: 0, duration: 0.35, ease: "power3.out" }, S5 + 0.2);
-tl.from("#s5-old-text", { opacity: 0, duration: 0.4, ease: "power1.out" }, S5 + 0.55);
-tl.to("#s5-strikethrough", { scaleX: 1, duration: 0.2, ease: "power2.out" }, S5 + 1.0);
-tl.from("#s5-new-text", { opacity: 0, duration: 0.3, ease: "power1.out" }, S5 + 1.25);
-tl.to("#s5-highlight-bar", { scaleX: 1, duration: 0.3, ease: "power2.out" }, S5 + 1.6);
+    <script>
+      window.__timelines = window.__timelines || {};
 
-/* ═══════════════════════════════════════
-   TRANSITION 5→6  Hard cut
-   ═══════════════════════════════════════ */
-tl.set("#scene5", { opacity: 0 }, S6);
-tl.set("#scene6", { opacity: 1 }, S6);
+      /* ── Caption groups (word-level transcript) ─────────────────── */
+      var CAPTION_GROUPS = [
+        /* 0 */ { words:[{t:"Anthropic",s:0.03,e:0.44},{t:"quietly",s:0.62,e:0.91},{t:"pulled",s:0.99,e:1.21},{t:"Claude",s:1.28,e:1.60},{t:"Code",s:1.66,e:1.84}], start:0.03, end:1.84 },
+        /* 1 */ { words:[{t:"from",s:1.94,e:2.16},{t:"its",s:2.17,e:2.39},{t:"$20",s:2.39,e:2.90},{t:"Pro",s:2.90,e:3.12},{t:"plan,",s:3.12,e:3.50}], start:1.94, end:3.50 },
+        /* 2 */ { words:[{t:"and",s:3.50,e:3.59},{t:"the",s:3.59,e:3.68},{t:"developer",s:3.68,e:3.92},{t:"internet",s:4.00,e:4.44},{t:"noticed",s:4.51,e:5.22}], start:3.50, end:5.22 },
+        /* 3 */ { words:[{t:"fast.",s:5.22,e:5.96}], start:5.22, end:5.96 },
+        /* 4 */ { words:[{t:"One",s:5.99,e:6.08},{t:"tweet",s:6.14,e:6.37},{t:"documenting",s:6.37,e:6.87},{t:"the",s:6.95,e:7.09},{t:"change",s:7.09,e:7.40}], start:5.99, end:7.40 },
+        /* 5 */ { words:[{t:"hit",s:7.40,e:7.47},{t:"900,000",s:7.55,e:8.59},{t:"views",s:8.59,e:8.85},{t:"in",s:8.85,e:8.92},{t:"hours.",s:8.99,e:9.33}], start:7.40, end:9.33 },
+        /* 6 */ { words:[{t:"GitHub",s:9.47,e:9.76},{t:"issues",s:9.82,e:10.14},{t:"called",s:10.14,e:10.46},{t:"it",s:10.49,e:10.61},{t:"a",s:10.61,e:10.65}], start:9.47, end:10.65 },
+        /* 7 */ { words:[{t:"breaking",s:10.72,e:11.14},{t:"change.",s:11.14,e:11.72}], start:10.72, end:11.72 },
+        /* 8 */ { words:[{t:"Anthropic",s:11.75,e:12.16},{t:"walked",s:12.34,e:12.55},{t:"it",s:12.55,e:12.63},{t:"back,",s:12.71,e:12.93}], start:11.75, end:12.93 },
+        /* 9 */ { words:[{t:"claiming",s:13.00,e:13.45},{t:"it",s:13.45,e:13.56},{t:"was",s:13.56,e:13.73},{t:"just",s:13.73,e:13.92},{t:"an",s:13.95,e:14.04}], start:13.00, end:14.04 },
+        /*10 */ { words:[{t:"A-B",s:14.06,e:14.21},{t:"test",s:14.21,e:14.40},{t:"affecting",s:14.55,e:14.94},{t:"2%",s:14.94,e:15.16}], start:14.06, end:15.16 },
+        /*11 */ { words:[{t:"of",s:15.20,e:15.27},{t:"new",s:15.27,e:15.43},{t:"sign-ups,",s:15.44,e:16.28}], start:15.20, end:16.28 },
+        /*12 */ { words:[{t:"but",s:16.31,e:16.40},{t:"site-wide",s:16.46,e:16.91},{t:"support",s:16.91,e:17.29},{t:"docs",s:17.29,e:17.49}], start:16.31, end:17.49 },
+        /*13 */ { words:[{t:"were",s:17.56,e:17.71},{t:"already",s:17.71,e:18.09},{t:"rewritten",s:18.09,e:18.57}], start:17.56, end:18.57 },
+        /*14 */ { words:[{t:"as",s:18.57,e:18.67},{t:"if",s:18.67,e:18.77},{t:"the",s:18.77,e:18.93},{t:"change",s:18.93,e:19.24},{t:"was",s:19.31,e:19.41},{t:"permanent.",s:19.41,e:20.14}], start:18.57, end:20.14 },
+        /*15 */ { words:[{t:"The",s:20.17,e:20.26},{t:"VP",s:20.32,e:20.39},{t:"of",s:20.39,e:20.46},{t:"Product",s:20.52,e:20.85},{t:"admitted",s:20.85,e:21.26}], start:20.17, end:21.26 },
+        /*16 */ { words:[{t:"their",s:21.26,e:21.51},{t:"plans",s:21.51,e:21.74},{t:"simply",s:21.80,e:21.98},{t:"weren't",s:22.08,e:22.42}], start:21.26, end:22.42 },
+        /*17 */ { words:[{t:"built",s:22.42,e:22.67},{t:"for",s:22.67,e:22.82},{t:"Claude",s:22.82,e:23.10},{t:"Code's",s:23.17,e:23.43}], start:22.42, end:23.43 },
+        /*18 */ { words:[{t:"heavy",s:23.43,e:23.76},{t:"compute",s:23.76,e:24.22},{t:"demands.",s:24.27,e:25.15}], start:23.43, end:25.15 },
+        /*19 */ { words:[{t:"The",s:25.27,e:25.36},{t:"economics",s:25.42,e:25.93},{t:"are",s:25.93,e:26.10},{t:"real,",s:26.10,e:26.42}], start:25.27, end:26.42 },
+        /*20 */ { words:[{t:"the",s:26.52,e:26.61},{t:"execution",s:26.61,e:27.08},{t:"was",s:27.18,e:27.29},{t:"not.",s:27.33,e:27.70}], start:26.52, end:27.70 },
+        /*21 */ { words:[{t:"Silent",s:27.73,e:28.02},{t:"removals,",s:28.02,e:28.53}], start:27.73, end:28.53 },
+        /*22 */ { words:[{t:"retroactive",s:28.54,e:29.12},{t:"test",s:29.12,e:29.30},{t:"framing,",s:29.36,e:29.80}], start:28.54, end:29.80 },
+        /*23 */ { words:[{t:"zero",s:29.80,e:30.01},{t:"grandfathering",s:30.01,e:30.74},{t:"plan,",s:30.75,e:31.07}], start:29.80, end:31.07 },
+        /*24 */ { words:[{t:"that's",s:31.18,e:31.34},{t:"how",s:31.36,e:31.41},{t:"a",s:31.45,e:31.50}], start:31.18, end:31.50 },
+        /*25 */ { words:[{t:"defensible",s:31.50,e:32.06},{t:"pricing",s:32.09,e:32.49},{t:"decision",s:32.68,e:33.13}], start:31.50, end:33.13 },
+        /*26 */ { words:[{t:"becomes",s:33.13,e:33.57},{t:"a",s:33.57,e:33.72},{t:"trust",s:33.72,e:34.05},{t:"crisis.",s:34.05,e:34.72}], start:33.13, end:34.72 },
+        /*27 */ { words:[{t:"The",s:34.75,e:34.84},{t:"reversal",s:34.90,e:35.15},{t:"bought",s:35.34,e:35.63},{t:"time,",s:35.71,e:35.93}], start:34.75, end:35.93 },
+        /*28 */ { words:[{t:"the",s:36.00,e:36.14},{t:"underlying",s:36.14,e:36.69},{t:"problem",s:36.69,e:37.07}], start:36.00, end:37.07 },
+        /*29 */ { words:[{t:"hasn't",s:37.09,e:37.40},{t:"moved.",s:37.41,e:37.90}], start:37.09, end:37.90 },
+        /*30 */ { words:[{t:"Follow",s:37.93,e:38.33},{t:"for",s:38.33,e:38.54},{t:"more",s:38.54,e:38.81}], start:37.93, end:38.81 },
+        /*31 */ { words:[{t:"AI",s:38.89,e:38.97},{t:"industry",s:38.97,e:39.50},{t:"coverage.",s:39.56,e:40.20}], start:38.89, end:40.20 }
+      ];
 
-/* ═══════════════════════════════════════
-   SCENE 6 — The Reversal (20.7–22.6s)
-   ═══════════════════════════════════════ */
-tl.fromTo("#s6-glow", { scale: 1 }, { scale: 1.04, duration: 1.9, ease: "sine.inOut" }, S6);
-tl.from("#s6-label", { opacity: 0, duration: 0.2, ease: "power2.out" }, S6 + 0.1);
-tl.from("#s6-hero", { y: 60, opacity: 0, duration: 0.2, ease: "expo.out" }, S6 + 0.2);
-tl.to("#s6-underline", { scaleX: 1, duration: 0.2, ease: "power2.out" }, S6 + 0.4);
+      /* ── Build caption DOM ───────────────────────────────────────── */
+      (function() {
+        var layer = document.getElementById("caption-layer");
+        CAPTION_GROUPS.forEach(function(group, gi) {
+          var el = document.createElement("div");
+          el.id = "cg-" + gi;
+          el.className = "caption-group";
+          var textEl = document.createElement("div");
+          textEl.className = "caption-text";
+          group.words.forEach(function(w, wi) {
+            var span = document.createElement("span");
+            span.id = "cw-" + gi + "-" + wi;
+            span.style.color = "#E2E8F4"; /* --signal */
+            span.textContent = w.t + (wi < group.words.length - 1 ? " " : "");
+            textEl.appendChild(span);
+          });
+          el.appendChild(textEl);
+          layer.appendChild(el);
+        });
+      })();
 
-/* ═══════════════════════════════════════
-   TRANSITION 6→7  Blur crossfade 0.4s
-   ═══════════════════════════════════════ */
-tl.to("#scene6", { filter: "blur(10px)", scale: 1.03, opacity: 0, duration: 0.4, ease: "sine.inOut" }, S7);
-tl.fromTo("#scene7",
-  { filter: "blur(10px)", scale: 0.97, opacity: 0 },
-  { filter: "blur(0px)", scale: 1, opacity: 1, duration: 0.4, ease: "sine.inOut" }, S7 + 0.05);
+      /* ── Main timeline ───────────────────────────────────────────── */
+      var tl = gsap.timeline({ paused: true });
 
-/* ═══════════════════════════════════════
-   SCENE 7 — The Admission (22.6–26.7s)
-   ═══════════════════════════════════════ */
-tl.from("#s7-label", { opacity: 0, duration: 0.25, ease: "power1.out" }, S7 + 0.15);
-tl.from("#s7-panel", { opacity: 0, x: -30, duration: 0.35, ease: "power3.out" }, S7 + 0.2);
-tl.from("#s7-quote", { opacity: 0, duration: 0.3, ease: "power2.out" }, S7 + 0.35);
-tl.from("#s7-attribution", { opacity: 0, duration: 0.3, ease: "power1.out" }, S7 + 0.65);
+      /* Helper: 4-frame (~66ms) void flash hard-cut */
+      function hardCut(fromId, toId, T) {
+        tl.set("#void-flash", { opacity: 1 }, T);
+        tl.set("#" + fromId, { opacity: 0 }, T + 0.033);
+        tl.set("#" + toId,   { opacity: 1 }, T + 0.033);
+        tl.set("#void-flash", { opacity: 0 }, T + 0.066);
+      }
 
-/* ═══════════════════════════════════════
-   TRANSITION 7→8  Push slide LEFT 0.3s
-   ═══════════════════════════════════════ */
-tl.to("#scene7", { x: -1080, duration: 0.3, ease: "power3.inOut" }, S8);
-tl.fromTo("#scene8", { x: 1080, opacity: 1 }, { x: 0, duration: 0.3, ease: "power3.inOut" }, S8);
+      /* ═══════════════════════════════════════════════════════════════
+         SCENE 1   0 → 6.0s
+         ══════════════════════════════════════════════════════════════*/
+      var S1 = 0;
+      tl.from("#s1-corner-meta", { opacity: 0, duration: 0.28, ease: "power3.out" }, S1 + 0.10);
+      /* eyebrow 120ms before headline */
+      tl.from("#s1-eyebrow",     { y: 20, opacity: 0, duration: 0.28, ease: "power3.out" }, S1 + 0.15);
+      tl.from("#s1-headline",    { y: 30, opacity: 0, duration: 0.42, ease: "power3.out" }, S1 + 0.27);
+      tl.from("#s1-price-wrap",  { y: 30, opacity: 0, duration: 0.42, ease: "power3.out" }, S1 + 0.70);
+      /* breach strikethrough draws at $20 Pro plan end ~3.5s */
+      tl.to("#s1-strike", { scaleX: 1, duration: 0.20, ease: "steps(8)" }, S1 + 3.52);
+      /* scan-line drifts 8px over scene duration */
+      tl.to("#sl1", { y: 8, duration: 6.0, ease: "sine.inOut" }, S1);
 
-/* ═══════════════════════════════════════
-   SCENE 8 — The Warning (26.7–34.43s)
-   ═══════════════════════════════════════ */
-tl.fromTo("#s8-glow", { scale: 1 }, { scale: 1.15, duration: 7, ease: "sine.inOut" }, S8);
-tl.from("#s8-setup", { opacity: 0, duration: 0.3, ease: "power2.out" }, S8 + 0.15);
-tl.from("#s8-cta", { y: 50, opacity: 0, duration: 0.3, ease: "expo.out" }, S8 + 0.4);
+      /* ═══════════════════════════════════════════════════════════════
+         TRANSITION 1→2   hard cut at 6.0s
+         ══════════════════════════════════════════════════════════════*/
+      hardCut("s1", "s2", 6.0);
 
-/* Shimmer sweep */
-(function() {
-  var t = document.getElementById("s8-shimmer");
-  if (t && !t.querySelector(".shimmer-mask")) {
-    var m = document.createElement("div");
-    m.className = "shimmer-mask";
-    t.appendChild(m);
-  }
-})();
-tl.fromTo("#s8-shimmer", { "--shimmer-pos": "-20%" }, { "--shimmer-pos": "120%", duration: 1.2, ease: "power2.inOut" }, S8 + 0.8);
+      /* ═══════════════════════════════════════════════════════════════
+         SCENE 2   6.0 → 9.47s
+         ══════════════════════════════════════════════════════════════*/
+      var S2 = 6.0;
+      tl.from("#s2-eyebrow", { y: 20, opacity: 0, duration: 0.28, ease: "power3.out" }, S2 + 0.12);
+      tl.from("#s2-counter", { opacity: 0, duration: 0.20, ease: "power3.out" }, S2 + 0.12);
+      /* count up from 0 to 900000 starting at word "900,000" (7.55s), 1000ms */
+      tl.to("#s2-counter", {
+        textContent: 900000,
+        duration: 1.0,
+        ease: "expo.out",
+        snap: { textContent: 1 },
+        modifiers: {
+          textContent: function(v) {
+            return Math.round(parseFloat(v)).toLocaleString();
+          }
+        }
+      }, 7.55);
+      /* breach flash on lock */
+      tl.to("#s2-counter", { color: "#FF3B3B", duration: 0.050, ease: "none" }, 8.55);
+      tl.to("#s2-counter", { color: "#E2E8F4", duration: 0.150, ease: "none" }, 8.60);
+      /* label 80ms after counter locks */
+      tl.from("#s2-label", { y: 20, opacity: 0, duration: 0.28, ease: "power3.out" }, 8.63);
+      tl.to("#sl2", { y: 8, duration: 3.47, ease: "sine.inOut" }, S2);
 
-/* Scene 8 fade-out (final scene exception) */
-tl.to("#scene8", { opacity: 0, duration: 1.0, ease: "sine.inOut" }, 31.43);
+      /* ═══════════════════════════════════════════════════════════════
+         TRANSITION 2→3   hard cut at 9.47s
+         ══════════════════════════════════════════════════════════════*/
+      hardCut("s2", "s3", 9.47);
 
-/* ═══════════════════════════════════════
-   INSTAGRAM FOLLOW OVERLAY (31.43–34.43s)
-   ═══════════════════════════════════════ */
-tl.to("#ig-overlay", { opacity: 1, duration: 0.4, ease: "power2.out" }, 31.43);
-tl.from(".ig-follow-text", { y: 30, opacity: 0, duration: 0.35, ease: "power3.out" }, 31.6);
-tl.from(".ig-follow-sub", { y: 20, opacity: 0, duration: 0.3, ease: "power2.out" }, 31.75);
-tl.from(".ig-follow-btn", { scale: 0.9, opacity: 0, duration: 0.25, ease: "back.out(1.4)" }, 31.9);
+      /* ═══════════════════════════════════════════════════════════════
+         SCENE 3   9.47 → 11.75s
+         ══════════════════════════════════════════════════════════════*/
+      var S3 = 9.47;
+      tl.from("#s3-chip",   { y: 30, opacity: 0, duration: 0.42, ease: "power3.out" }, S3 + 0.15);
+      tl.from("#s3-source", { opacity: 0, duration: 0.28, ease: "power3.out" }, S3 + 0.65);
+      tl.to("#sl3", { y: 8, duration: 2.28, ease: "sine.inOut" }, S3);
 
-/* ═══════════════════════════════════════
-   CAPTIONS — Word-synced
-   ═══════════════════════════════════════ */
-var TRANSCRIPT = [
-  {"text":"Anthropic","start":0.03,"end":0.43},
-  {"text":"quietly","start":0.62,"end":0.93},
-  {"text":"removed","start":0.93,"end":1.25},
-  {"text":"Claude","start":1.39,"end":1.68},
-  {"text":"Code","start":1.74,"end":1.91},
-  {"text":"from","start":2.02,"end":2.2},
-  {"text":"its","start":2.26,"end":2.4},
-  {"text":"$20","start":2.4,"end":2.76},
-  {"text":"Pro","start":2.84,"end":3.03},
-  {"text":"plan,","start":3.1,"end":3.45},
-  {"text":"and","start":3.48,"end":3.52},
-  {"text":"developers","start":3.52,"end":4.06},
-  {"text":"noticed","start":4.1,"end":4.37},
-  {"text":"immediately.","start":4.49,"end":5.78},
-  {"text":"One","start":5.81,"end":5.9},
-  {"text":"tweet","start":5.96,"end":6.2},
-  {"text":"exposing","start":6.2,"end":6.61},
-  {"text":"the","start":6.64,"end":6.78},
-  {"text":"change","start":6.78,"end":7.03},
-  {"text":"hit","start":7.17,"end":7.26},
-  {"text":"900,000","start":7.26,"end":8.3},
-  {"text":"views","start":8.33,"end":8.54},
-  {"text":"in","start":8.54,"end":8.68},
-  {"text":"hours.","start":8.68,"end":9.16},
-  {"text":"The","start":9.19,"end":9.28},
-  {"text":"real","start":9.34,"end":9.56},
-  {"text":"problem?","start":9.56,"end":10.16},
-  {"text":"Claude","start":10.19,"end":10.45},
-  {"text":"Code's","start":10.45,"end":10.71},
-  {"text":"sessions","start":10.78,"end":11.11},
-  {"text":"burn","start":11.11,"end":11.3},
-  {"text":"orders","start":11.3,"end":11.41},
-  {"text":"of","start":11.61,"end":11.68},
-  {"text":"magnitude","start":11.68,"end":12.07},
-  {"text":"more","start":12.18,"end":12.28},
-  {"text":"compute","start":12.34,"end":12.63},
-  {"text":"than","start":12.63,"end":12.82},
-  {"text":"regular","start":12.82,"end":13.15},
-  {"text":"chat.","start":13.15,"end":13.56},
-  {"text":"Anthropic","start":13.59,"end":13.99},
-  {"text":"called","start":14.18,"end":14.35},
-  {"text":"it","start":14.35,"end":14.45},
-  {"text":"a","start":14.45,"end":14.5},
-  {"text":"small","start":14.5,"end":14.76},
-  {"text":"A-B","start":14.76,"end":14.88},
-  {"text":"test","start":14.95,"end":15.12},
-  {"text":"on","start":15.12,"end":15.14},
-  {"text":"two","start":15.23,"end":15.38},
-  {"text":"percent","start":15.38,"end":15.75},
-  {"text":"of","start":15.75,"end":15.83},
-  {"text":"sign-ups.","start":15.85,"end":16.32},
-  {"text":"But","start":16.41,"end":16.53},
-  {"text":"they","start":16.53,"end":16.74},
-  {"text":"had","start":16.74,"end":16.9},
-  {"text":"already","start":16.9,"end":17.36},
-  {"text":"rewritten","start":17.39,"end":17.79},
-  {"text":"their","start":17.98,"end":18.22},
-  {"text":"public","start":18.22,"end":18.59},
-  {"text":"support","start":18.59,"end":18.94},
-  {"text":"docs","start":19.03,"end":19.26},
-  {"text":"as","start":19.26,"end":19.27},
-  {"text":"if","start":19.38,"end":19.49},
-  {"text":"it","start":19.53,"end":19.62},
-  {"text":"were","start":19.62,"end":19.86},
-  {"text":"permanent.","start":19.86,"end":20.66},
-  {"text":"After","start":20.69,"end":20.9},
-  {"text":"the","start":20.9,"end":20.97},
-  {"text":"backlash,","start":21.04,"end":21.47},
-  {"text":"they","start":21.52,"end":21.71},
-  {"text":"reversed","start":21.71,"end":21.91},
-  {"text":"course.","start":22.11,"end":22.57},
-  {"text":"But","start":22.63,"end":22.78},
-  {"text":"the","start":22.79,"end":22.91},
-  {"text":"VP","start":22.98,"end":23.03},
-  {"text":"of","start":23.03,"end":23.23},
-  {"text":"Product","start":23.23,"end":23.67},
-  {"text":"admitted","start":23.67,"end":24.18},
-  {"text":"their","start":24.18,"end":24.5},
-  {"text":"current","start":24.5,"end":24.95},
-  {"text":"plans","start":24.95,"end":25.27},
-  {"text":"were","start":25.27,"end":25.52},
-  {"text":"not","start":25.52,"end":25.71},
-  {"text":"built","start":25.71,"end":26.03},
-  {"text":"for","start":26.03,"end":26.22},
-  {"text":"this.","start":26.22,"end":26.72},
-  {"text":"The","start":26.75,"end":26.84},
-  {"text":"pricing","start":26.9,"end":27.15},
-  {"text":"change","start":27.34,"end":27.65},
-  {"text":"is","start":27.65,"end":27.76},
-  {"text":"almost","start":27.76,"end":27.97},
-  {"text":"certainly","start":28.11,"end":28.63},
-  {"text":"coming","start":28.74,"end":28.99},
-  {"text":"back.","start":29.01,"end":29.33},
-  {"text":"Start","start":29.33,"end":29.48},
-  {"text":"evaluating","start":29.62,"end":30.21},
-  {"text":"your","start":30.21,"end":30.44},
-  {"text":"alternatives","start":30.44,"end":31.09},
-  {"text":"now.","start":31.21,"end":31.43}
-];
+      /* ═══════════════════════════════════════════════════════════════
+         TRANSITION 3→4   hard cut at 11.75s
+         ══════════════════════════════════════════════════════════════*/
+      hardCut("s3", "s4", 11.75);
 
-/* Per-word styling lookup */
-var NUM_WORDS = {"$20":1,"900,000":1,"2%":1,"two":1,"percent":1};
-var ACCENT_WORDS = {"not":1,"built":1,"alternatives":1};
+      /* ═══════════════════════════════════════════════════════════════
+         SCENE 4   11.75 → 20.17s
+         ══════════════════════════════════════════════════════════════*/
+      var S4 = 11.75;
+      tl.from("#s4-eyebrow", { y: 20, opacity: 0, duration: 0.28, ease: "power3.out" }, S4 + 0.15);
+      tl.from("#s4-num",     { opacity: 0, duration: 0.20, ease: "power3.out" }, S4 + 0.42);
+      tl.from("#s4-pct",     { opacity: 0, duration: 0.20, ease: "power3.out" }, S4 + 0.50);
+      tl.from("#s4-label",   { y: 20, opacity: 0, duration: 0.28, ease: "power3.out" }, S4 + 0.58);
+      /* contradiction line appears when "sitewide docs" is spoken (~16.46s) */
+      tl.from("#s4-contradiction", { x: -12, opacity: 0, duration: 0.28, ease: "power3.out" }, 16.50);
+      tl.to("#sl4", { y: 8, duration: 8.42, ease: "sine.inOut" }, S4);
 
-/* Build groups: 3-4 words, break on pauses ≥150ms and sentence endings */
-var GROUPS = [];
-(function() {
-  var g = { words: [], start: 0, end: 0 };
-  for (var i = 0; i < TRANSCRIPT.length; i++) {
-    var w = TRANSCRIPT[i];
-    if (g.words.length === 0) g.start = w.start;
-    g.words.push(w);
-    g.end = w.end;
-    var isEnd = /[.!?]$/.test(w.text);
-    var isPause = (i < TRANSCRIPT.length - 1) && (TRANSCRIPT[i+1].start - w.end >= 0.15);
-    var isFull = g.words.length >= 4;
-    if (isEnd || isPause || isFull || i === TRANSCRIPT.length - 1) {
-      GROUPS.push({ words: g.words.slice(), start: g.start, end: g.end,
-        text: g.words.map(function(ww){ return ww.text; }).join(" ") });
-      g = { words: [], start: 0, end: 0 };
-    }
-  }
-})();
+      /* ═══════════════════════════════════════════════════════════════
+         TRANSITION 4→5   hard cut at 20.17s
+         ══════════════════════════════════════════════════════════════*/
+      hardCut("s4", "s5", 20.17);
 
-/* Build caption DOM + timeline tweens */
-var captionLayer = document.getElementById("caption-layer");
+      /* ═══════════════════════════════════════════════════════════════
+         SCENE 5   20.17 → 25.27s
+         ══════════════════════════════════════════════════════════════*/
+      var S5 = 20.17;
+      /* pull-quote: fade only, no y movement */
+      tl.from("#s5-quote",       { opacity: 0, duration: 0.60, ease: "power3.out" }, S5 + 0.15);
+      tl.from("#s5-rule",        { opacity: 0, duration: 0.28, ease: "power3.out" }, S5 + 0.58);
+      tl.from("#s5-attribution", { opacity: 0, duration: 0.28, ease: "power3.out" }, S5 + 0.82);
+      tl.to("#sl5", { y: 8, duration: 5.10, ease: "sine.inOut" }, S5);
 
-GROUPS.forEach(function(group, gi) {
-  var gEl = document.createElement("div");
-  gEl.className = "caption-group";
-  gEl.id = "cg-" + gi;
+      /* ═══════════════════════════════════════════════════════════════
+         TRANSITION 5→6   STAGGERED-BLOCK COVER
+         6 horizontal strips cover bottom-to-top, scene swaps, strips exit
+         ══════════════════════════════════════════════════════════════*/
+      var T56 = 25.27;
+      /* reveal wipe blocks */
+      tl.set(["#wb0","#wb1","#wb2","#wb3","#wb4","#wb5"], { opacity: 1, x: 1080 }, T56 - 0.01);
+      /* strips sweep in from right, staggered bottom-to-top */
+      tl.to("#wb5", { x: 0, duration: 0.15, ease: "power3.inOut" }, T56 + 0.00);
+      tl.to("#wb4", { x: 0, duration: 0.15, ease: "power3.inOut" }, T56 + 0.05);
+      tl.to("#wb3", { x: 0, duration: 0.15, ease: "power3.inOut" }, T56 + 0.10);
+      tl.to("#wb2", { x: 0, duration: 0.15, ease: "power3.inOut" }, T56 + 0.15);
+      tl.to("#wb1", { x: 0, duration: 0.15, ease: "power3.inOut" }, T56 + 0.20);
+      tl.to("#wb0", { x: 0, duration: 0.15, ease: "power3.inOut" }, T56 + 0.25);
+      /* scene swap under cover */
+      tl.set("#s5", { opacity: 0 }, T56 + 0.32);
+      tl.set("#s6", { opacity: 1 }, T56 + 0.32);
+      /* strips exit left */
+      tl.to("#wb0", { x: -1080, duration: 0.15, ease: "power3.inOut" }, T56 + 0.34);
+      tl.to("#wb1", { x: -1080, duration: 0.15, ease: "power3.inOut" }, T56 + 0.39);
+      tl.to("#wb2", { x: -1080, duration: 0.15, ease: "power3.inOut" }, T56 + 0.44);
+      tl.to("#wb3", { x: -1080, duration: 0.15, ease: "power3.inOut" }, T56 + 0.49);
+      tl.to("#wb4", { x: -1080, duration: 0.15, ease: "power3.inOut" }, T56 + 0.54);
+      tl.to("#wb5", { x: -1080, duration: 0.15, ease: "power3.inOut" }, T56 + 0.59);
+      /* hide wipe blocks after exit completes */
+      tl.set(["#wb0","#wb1","#wb2","#wb3","#wb4","#wb5"], { opacity: 0 }, T56 + 0.76);
 
-  group.words.forEach(function(word, wi) {
-    var sp = document.createElement("span");
-    sp.className = "caption-word";
-    sp.id = "cw-" + gi + "-" + wi;
-    sp.textContent = word.text;
+      /* ═══════════════════════════════════════════════════════════════
+         SCENE 6   content appears after wipe (~25.85s)
+         ══════════════════════════════════════════════════════════════*/
+      var S6 = T56 + 0.60; /* ≈ 25.87s */
+      tl.from("#s6-line1", { y: 30, opacity: 0, duration: 0.42, ease: "power3.out" }, S6);
+      tl.from("#s6-line2", { y: 30, opacity: 0, duration: 0.42, ease: "power3.out" }, S6 + 0.30);
+      tl.to("#sl6", { y: 8, duration: 2.46, ease: "sine.inOut" }, S6);
 
-    var clean = word.text.toLowerCase().replace(/[.,!?']/g, "");
-    if (NUM_WORDS[clean] || NUM_WORDS[word.text]) sp.classList.add("number-word");
-    if (ACCENT_WORDS[clean]) sp.classList.add("accent-word");
+      /* ═══════════════════════════════════════════════════════════════
+         TRANSITION 6→7   hard cut at 27.73s
+         ══════════════════════════════════════════════════════════════*/
+      hardCut("s6", "s7", 27.73);
 
-    /* Claude Code → evidence color (first 5 groups only) */
-    if (clean === "claude" && wi + 1 < group.words.length &&
-        group.words[wi+1].text.toLowerCase().replace(/[.'s]/g,"").indexOf("code") === 0 && gi < 8) {
-      sp.classList.add("evidence-word");
-    }
-    if ((clean === "code" || clean === "codes") && wi > 0 &&
-        group.words[wi-1].text.toLowerCase() === "claude" && gi < 8) {
-      sp.classList.add("evidence-word");
-    }
+      /* ═══════════════════════════════════════════════════════════════
+         SCENE 7   27.73 → 34.75s
+         ══════════════════════════════════════════════════════════════*/
+      var S7 = 27.73;
+      /* list items stagger in with bullets */
+      tl.from("#s7-item1", { x: -20, opacity: 0, duration: 0.42, ease: "power3.out" }, S7 + 0.15);
+      tl.to("#s7-b1",      { scaleX: 1, duration: 0.20, ease: "power3.out" }, S7 + 0.20);
+      tl.from("#s7-item2", { x: -20, opacity: 0, duration: 0.42, ease: "power3.out" }, S7 + 0.38);
+      tl.to("#s7-b2",      { scaleX: 1, duration: 0.20, ease: "power3.out" }, S7 + 0.43);
+      tl.from("#s7-item3", { x: -20, opacity: 0, duration: 0.42, ease: "power3.out" }, S7 + 0.61);
+      tl.to("#s7-b3",      { scaleX: 1, duration: 0.20, ease: "power3.out" }, S7 + 0.66);
+      /* verdict phrase appears at "becomes a trust crisis" (~33.13s) */
+      tl.from("#s7-verdict", { y: 20, opacity: 0, duration: 0.42, ease: "power3.out" }, 33.15);
+      tl.to("#sl7", { y: 8, duration: 7.02, ease: "sine.inOut" }, S7);
 
-    gEl.appendChild(sp);
-  });
+      /* ═══════════════════════════════════════════════════════════════
+         TRANSITION 7→8   hard cut at 34.75s
+         ══════════════════════════════════════════════════════════════*/
+      hardCut("s7", "s8", 34.75);
 
-  captionLayer.appendChild(gEl);
+      /* ═══════════════════════════════════════════════════════════════
+         SCENE 8   34.75 → 37.93s
+         ══════════════════════════════════════════════════════════════*/
+      var S8 = 34.75;
+      tl.from("#s8-reversed",  { y: 30, opacity: 0, duration: 0.42, ease: "power3.out" }, S8 + 0.15);
+      tl.to("#s8-green-bar",   { scaleY: 1, duration: 0.30, ease: "power3.out" }, S8 + 0.20);
+      /* UNRESOLVED appears at "underlying problem" (~36.14s) */
+      tl.to("#s8-unresolved-wrap", { opacity: 1, duration: 0.42, ease: "power3.out" }, 36.10);
+      tl.to("#s8-underline",  { scaleX: 1, duration: 0.20, ease: "steps(8)" }, 36.55);
+      tl.to("#sl8", { y: 8, duration: 3.18, ease: "sine.inOut" }, S8);
 
-  /* Fit text */
-  if (window.__hyperframes && window.__hyperframes.fitTextFontSize) {
-    var fit = window.__hyperframes.fitTextFontSize(group.text, {
-      fontFamily: "Space Grotesk", fontWeight: 700,
-      maxWidth: 840, baseFontSize: 48, minFontSize: 36
-    });
-    gEl.style.fontSize = fit.fontSize + "px";
-  }
+      /* ═══════════════════════════════════════════════════════════════
+         TRANSITION 8→9   hard cut at 37.93s
+         ══════════════════════════════════════════════════════════════*/
+      hardCut("s8", "s9", 37.93);
 
-  /* Init hidden */
-  tl.set(gEl, { opacity: 0, visibility: "hidden", y: 20 }, 0);
+      /* ═══════════════════════════════════════════════════════════════
+         SCENE 9   37.93 → 40.2s
+         ══════════════════════════════════════════════════════════════*/
+      var S9 = 37.93;
+      tl.from("#s9-cta",     { y: 20, opacity: 0, duration: 0.42, ease: "power3.out" }, S9 + 0.15);
+      tl.to("#s9-underline", { scaleX: 1, duration: 0.20, ease: "power2.inOut" }, S9 + 0.68);
+      tl.to("#sl9", { y: 8, duration: 2.27, ease: "sine.inOut" }, S9);
 
-  /* Entrance: fade-up */
-  tl.to(gEl, { opacity: 1, visibility: "visible", y: 0, duration: 0.18, ease: "power3.out" }, group.start);
+      /* ═══════════════════════════════════════════════════════════════
+         TRANSITION 9→FOLLOW   hard cut at 40.2s
+         ══════════════════════════════════════════════════════════════*/
+      hardCut("s9", "s-follow", 40.2);
 
-  /* Per-word karaoke: accent highlight on active word */
-  group.words.forEach(function(word, wi) {
-    var wEl = document.getElementById("cw-" + gi + "-" + wi);
-    if (!wEl) return;
-    /* Only apply karaoke to words that don't already have a special static class */
-    var hasStatic = wEl.classList.contains("number-word") ||
-                    wEl.classList.contains("evidence-word") ||
-                    wEl.classList.contains("accent-word");
-    if (!hasStatic) {
-      tl.set(wEl, { color: "#D94F3D" }, word.start);
-      tl.set(wEl, { color: "#E2E4E8" }, word.end);
-    }
-  });
+      /* ═══════════════════════════════════════════════════════════════
+         FOLLOW OVERLAY   40.2 → 43.2s
+         ══════════════════════════════════════════════════════════════*/
+      var SF = 40.2;
+      tl.from("#follow-eyebrow", { y: 20, opacity: 0, duration: 0.28, ease: "power3.out" }, SF + 0.15);
+      tl.from("#follow-main",    { y: 30, opacity: 0, duration: 0.42, ease: "power3.out" }, SF + 0.30);
+      tl.to("#follow-rule",      { scaleX: 1, duration: 0.30, ease: "power2.inOut" }, SF + 0.76);
+      tl.from("#follow-sub",     { opacity: 0, duration: 0.28, ease: "power3.out" }, SF + 0.90);
+      /* final fade out */
+      tl.to("#s-follow", { opacity: 0, duration: 0.50, ease: "power2.in" }, 42.70);
 
-  /* Exit: hard kill */
-  tl.to(gEl, { opacity: 0, duration: 0.12, ease: "power2.in" }, group.end - 0.12);
-  tl.set(gEl, { opacity: 0, visibility: "hidden" }, group.end);
-});
+      /* ═══════════════════════════════════════════════════════════════
+         CAPTIONS — word-synced karaoke
+         ══════════════════════════════════════════════════════════════*/
+      CAPTION_GROUPS.forEach(function(group, gi) {
+        var el = document.getElementById("cg-" + gi);
+        if (!el) return;
 
-/* Caption self-lint */
-GROUPS.forEach(function(group, gi) {
-  var el = document.getElementById("cg-" + gi);
-  if (!el) return;
-  tl.seek(group.end + 0.01);
-  var cs = window.getComputedStyle(el);
-  if (cs.opacity !== "0" && cs.visibility !== "hidden") {
-    console.warn("[caption-lint] group " + gi + " visible at t=" + (group.end + 0.01).toFixed(2) + "s");
-  }
-});
-tl.seek(0);
+        /* show group */
+        tl.set(el, { opacity: 1, visibility: "visible" }, group.start);
 
-window.__timelines["main"] = tl;
-</script>
-</body>
+        /* highlight each word in amber on its start, revert on its end */
+        group.words.forEach(function(w, wi) {
+          var wEl = document.getElementById("cw-" + gi + "-" + wi);
+          if (!wEl) return;
+          tl.set(wEl, { color: "#F59E0B" }, w.s);   /* amber-alert */
+          tl.set(wEl, { color: "#E2E8F4" }, w.e);   /* signal */
+        });
+
+        /* hard kill at group end */
+        tl.set(el, { opacity: 0, visibility: "hidden" }, group.end);
+      });
+
+      /* ── Caption self-lint ────────────────────────────────────────── */
+      CAPTION_GROUPS.forEach(function(group, gi) {
+        var el = document.getElementById("cg-" + gi);
+        if (!el) return;
+        tl.seek(group.end + 0.01);
+        var cs = window.getComputedStyle(el);
+        if (cs.opacity !== "0" && cs.visibility !== "hidden") {
+          console.warn("[caption-lint] group " + gi + " still visible at t="
+            + (group.end + 0.01).toFixed(2) + "s");
+        }
+      });
+      tl.seek(0);
+
+      /* ── Register ─────────────────────────────────────────────────── */
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
 </html>

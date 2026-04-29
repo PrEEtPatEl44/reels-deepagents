@@ -1,376 +1,374 @@
 # DESIGN.md — Anthropic's Claude Code Bait and Switch
 
-## Video Overview
-
-| Field | Value |
-|---|---|
-| Title | Anthropic's Claude Code Bait and Switch |
-| Canvas | 1080 × 1920 (9:16 portrait) |
-| Duration | ~32 s |
-| Tone | Investigative, skeptical, controlled urgency — a trust-breach exposé, not a rant |
-| Visual Style | **Shadow Cut** (Hans Hillmann influence) — dark cinematic with surgical reveals |
-| Energy | Medium-high — measured tension, not frantic |
+**Video:** Anthropic's Claude Code Bait and Switch
+**Slug:** `anthropics-claude-code-bait-and-switch`
+**Canvas:** 1080 × 1920 (portrait, 9:16)
+**Duration target:** ~42–48s (narration-driven)
+**Surface:** TikTok + Instagram Reels
 
 ---
 
-## Visual Style: Shadow Cut (adapted)
+## 1. Concept — "Cold Audit"
 
-Mood is *investigative exposé*. The viewer should feel like they're watching evidence being laid out on a table in a dark room. Content emerges from darkness deliberately. Nothing feels decorative or gratuitous — every element earns its place.
+The narration is a verdict, not a rant. It documents a sequence of institutional failures — silent removal, retroactive framing, absent grandfathering — and names the result: *a trust crisis*. The word "bait and switch" is charged legal language. The design must match that register: **analytical, cold, and institutional**, like a forensic post-mortem produced at 3am by an engineer who has done this exact thing before.
 
-### What this style IS
-- Dark, minimal, high-contrast. Information revealed with intention.
-- Cold and clinical, but with one warm-danger accent that signals "something is wrong."
-- Typography-driven — text IS the visual. No stock imagery, no illustrations.
+The metaphor is **the audit trail**. Everything on screen looks like it was captured from a system — a changelog, an incident log, a diff, a status dashboard that just flipped red. This is not a rant-channel video. It is a case study in slow-motion institutional failure, rendered with the same visual vocabulary that developers use when they say "here are the receipts."
 
-### What this style is NOT
-- Not neon/cyberpunk. Not glitchy for the sake of glitch.
-- Not corporate-blue explainer. Not a product comparison chart.
-- Not angry/shouty maximalism — the power comes from restraint.
+The emotional arc:
+- **Opening:** quiet authority — something happened
+- **Middle:** cold documentation of each failure vector
+- **Climax:** the verdict rendered in large type
+- **Outro:** one clean CTA, no flourish
+
+### Custom named style — **"Incident Report"**
+
+A fusion of **Shadow Cut** (dark, forensic emergence from darkness) and **Swiss Pulse** (grid precision, numbered beats, hard data). The Shadow Cut provides atmosphere — content emerging from a cool void. Swiss Pulse provides the analytical spine — every fact has a label, every number has a unit. Where the related video `anthropics-claude-code-backlash` is warm and editorial (a journalist's marked-up memo), this video is cold and systematic (an auditor's incident log).
 
 ---
 
-## Platform Safe Area
+## 2. Safe-Area Layout
 
-All primary content (headlines, stats, labels, hero visuals) MUST live inside the safe rectangle. Captions sit in their own dedicated band within the safe area but near its bottom edge.
+### Platform danger zones (1080 × 1920)
 
 ```
-Canvas: 1080 × 1920
-
---safe-top:     240 px from top
---safe-bottom:  1400 px from top  (i.e. 520 px from bottom edge)
---safe-left:    60 px from left
---safe-right:   900 px from left  (i.e. 180 px from right edge)
-
-Safe rectangle: x[60–900], y[240–1400]
-Safe width:     840 px
-Safe height:    1160 px
+--safe-top:    240px    /* platform chrome: camera notch, back button, TikTok/Reels top UI */
+--safe-bottom: 1400px   /* upper edge of the username/caption/like-stack/progress-bar zone */
+--safe-left:   180px    /* mirror inset of the right action stack; keeps layout centered on x=540 */
+--safe-right:  900px    /* right edge of the vertical like/comment/share/follow button stack */
 ```
 
-### Named zones within the safe rectangle
+### Safe content rectangle
 
-| Zone | Y range (from canvas top) | Purpose |
-|---|---|---|
-| **upper-band** | 240 – 520 | Secondary labels, category tags, scene context |
-| **hero-center** | 520 – 1100 | Primary content — hero word, stat, headline. Centroid of hero must fall within y 700–940 (±120 px of vertical center at y≈820) |
-| **caption-band** | 1100 – 1400 | Narration captions/subtitles ONLY. Never hero content. |
+All primary content — headlines, stats, captions, key visuals, logos — lives inside:
 
-### Center-of-frame rule
+```
+x ∈ [180, 900]   width  = 720px
+y ∈ [240, 1400]  height = 1160px
+```
 
-- Vertical center of the safe rectangle: **y ≈ 820 px**.
-- Every scene has ONE designated hero element. Its visual centroid must sit within **y 700–940**.
-- If a scene has less content, scale the hero element UP or add a supporting visual (underline rule, radial glow, oversized ghost numeral behind the hero) so the middle band (y 520–1100) is visually occupied.
-- Captions are NOT the hero. They live in the caption-band and do not count toward center balance.
-- Stacked elements (e.g., label + stat + subtext) must be vertically balanced AROUND y≈820, not piled at top or bottom of the safe rect.
+Background decoratives (ghost text, grain, faint scan-lines) may extend to the full 1080 × 1920 canvas. No readable text, numbers, or logos may escape the safe rectangle.
 
----
+### Horizontal anchor
 
-## Color Palette
+```
+--safe-center-x: 540px   /* (180 + 900) / 2 = 540 = true frame midpoint */
+```
 
-Derived from the Dark / Premium family, shifted toward cold-steel with a singular danger accent.
+**Every hero element, headline, stat, caption band, and follow overlay must be horizontally centered on `--safe-center-x: 540px`.** Implement via `left: 540px; transform: translateX(-50%)` on absolute elements, or via a flex container spanning `x: 180 → 900` with `justify-content: center`. No element may use a custom `margin-left` or asymmetric padding that shifts it off the 540px anchor. `text-align: left` is permitted only inside a container that is itself centered on 540px, where the container has equal left/right margins inside the safe rectangle.
 
-| Token | Hex | Role |
-|---|---|---|
-| `--bg` | `#0B0E11` | Canvas background. Near-black with a cold blue undertone — not pure #000. |
-| `--bg-elevated` | `#141A21` | Elevated surfaces: cards, quote blocks, evidence panels. |
-| `--fg` | `#E2E4E8` | Primary text. Cool off-white — not pure #fff. |
-| `--fg-muted` | `#6B7280` | Secondary labels, attribution, supporting text. |
-| `--accent` | `#D94F3D` | Danger-red. The "something is wrong" signal. Used for the hero stat, key reveals, strikethroughs, warning indicators. Warm against the cold palette — intentional tension. |
-| `--accent-dim` | `#D94F3D` at 15% opacity | Glow halos behind accent elements, background washes on evidence scenes. |
-| `--evidence` | `#C9A84C` | Muted gold. Used sparingly for "documented proof" elements: the URL change, the doc rewrite, the quote. Signals "here is the receipt." |
-| `--evidence-dim` | `#C9A84C` at 12% opacity | Subtle background wash for evidence scenes. |
+### Caption band
 
-### Color rules
-- Background is `--bg` on ALL scenes. Consistency = visual continuity.
-- Maximum TWO colored elements per scene. Everything else is `--fg` or `--fg-muted`.
-- `--accent` is reserved for the ONE thing the viewer must remember from each scene. Never decorative.
-- `--evidence` appears only on scenes 4, 5, and 7 (the "receipts" scenes). It distinguishes factual evidence from editorial commentary.
+Burned-in subtitle captions occupy a dedicated band inside the safe zone:
 
----
+```
+--caption-band-top:    1240px
+--caption-band-bottom: 1380px
+--caption-band-center-x: 540px     /* same as --safe-center-x */
+--caption-band-width:   720px      /* spans x: 180 to x: 900 */
+```
 
-## Typography
-
-### Font pairing
-
-| Role | Font | Weight | Tracking | Why |
-|---|---|---|---|---|
-| **Headlines / Hero** | **Space Grotesk** | 700 | -0.03em | Industrial geometric sans with a slightly squared skeleton. Reads as technical and deliberate — not the expected grotesque. The alternate `1` glyph and mono-width numerals give stats a built-in gravitas. |
-| **Body / Evidence / Labels** | **DM Mono** | 400 | 0.02em | Monospace for the "showing receipts" register. Makes quotes, URLs, and data feel like terminal output — raw, unedited, documentary. The mono vs. proportional tension with Space Grotesk embodies the narrative: corporate messaging vs. documented evidence. |
-
-### Type scale (portrait 1080 px wide, within 840 px safe width)
-
-| Use | Size | Weight | Font | Max width |
-|---|---|---|---|---|
-| Hero stat / number | 140–160 px | 700 | Space Grotesk | 780 px |
-| Scene headline | 72–88 px | 700 | Space Grotesk | 780 px |
-| Supporting headline | 48–56 px | 700 | Space Grotesk | 780 px |
-| Evidence quote | 36–44 px | 400 | DM Mono | 740 px |
-| Label / tag | 24–28 px | 400 | DM Mono | 400 px |
-| Caption (narration) | 44–52 px | 700 | Space Grotesk | 780 px |
-
-### Type rules
-- Headlines: ALL CAPS only for the hero word/stat in scenes where impact requires it (scenes 2, 3, 6). Mixed case otherwise.
-- Evidence text (quotes, URLs): always mixed case in DM Mono. Never capitalize evidence — it should feel verbatim.
-- Numerals: always Space Grotesk 700. Numbers are the visual anchors of this video.
-- Use `fitTextFontSize()` for any text that might overflow the safe width.
+Rules:
+- Captions **never** enter the center third (`y ∈ [640, 1280]`). That zone is the hero content area.
+- Captions are horizontally centered on `--safe-center-x: 540px` using the same centering rules as all other content.
+- Max 2 lines. Max ~6 words per line at the specified font size. Break at sentence boundaries or 150ms+ pauses.
+- Background slab: `--void-1` at 88% opacity, `border-radius: 8px`, 20px vertical padding, 32px horizontal padding — restrained, not a balloon.
+- Type: **DM Mono** 600, 50px, color `--signal`, max-width 680px inside the band.
+- Current-word highlight (karaoke): the active word swaps to `--amber-alert` instantly (step function, no ease). Previous words remain `--signal`.
+- One caption group visible at a time. Hard kill at word boundary end: `opacity: 0; visibility: hidden` set deterministically.
 
 ---
 
-## Captions / Subtitles
+## 3. Color System
 
-### Style
-- **Position:** Centered horizontally within safe area. Vertical placement in the caption-band: **y 1140–1340** (baseline of text at y≈1300, top of text block at y≈1140).
-- **Font:** Space Grotesk 700 at 44–52 px. Uppercase for emphasis words only.
-- **Color:** `--fg` (#E2E4E8) default. Current active word highlighted in `--accent` (#D94F3D).
-- **Grouping:** 3–4 words per group. Break on natural phrase boundaries and pauses ≥150 ms.
-- **Background:** None. No pill, no box. Clean text with a subtle text-shadow for legibility: `0 2px 12px rgba(0,0,0,0.7)`.
-- **Animation:** Fade-up entrance (y: +20 → 0, opacity 0 → 1, duration 0.18s, `power3.out`). Hard kill on exit (`opacity: 0, visibility: hidden`).
+The palette is **cold-tinted dark** — a near-zero-hue background pulled slightly toward blue-grey, as if the terminal is the only light source. This is not a warm newsroom; it is a server room at 2am.
 
-### Per-word styling
-| Word/phrase | Treatment |
-|---|---|
-| Numbers (900,000 / $20 / 2% / $100) | `--accent` color, slight scale bump (1.15×) |
-| "Claude Code" | `--evidence` color when first introduced |
-| "bait and switch" | `--accent` color, marker highlight sweep |
-| "not built for this" | `--accent` color |
-| "alternatives" | `--accent` color |
+All colors are absolute. No `#000`, no `#fff`, no generic tech blue. Every neutral is tinted cool toward the void background.
 
-### Spacing rule
-- Captions must NEVER enter the hero-center zone (above y 1100). If captions and hero content would overlap, the hero takes priority — captions shrink or reposition downward.
+### Tokens
 
----
+| Token            | Hex       | Role                                                                                 |
+| ---------------- | --------- | ------------------------------------------------------------------------------------ |
+| `--void-0`       | `#0B0D11` | Primary background. Near-black with a cold blue-green whisper. Every scene.         |
+| `--void-1`       | `#131720` | Secondary surface — card backgrounds, incident boxes, caption slabs.                |
+| `--void-2`       | `#1C2230` | Tertiary surface — hairlines, dividers, panel borders.                               |
+| `--signal`       | `#E2E8F4` | Primary foreground. Cool near-white. Headlines, body copy, all readable text.       |
+| `--signal-dim`   | `#7A8499` | Secondary foreground — metadata labels, timestamps, source attributions.             |
+| `--signal-ghost` | `#2B3347` | Ghost text, background decoratives (3–6% visual weight on decoratives).             |
+| `--breach`       | `#FF3B3B` | THE ALERT. Strikethroughs, "REMOVED", broken-status chips, the $20 crossed-out price. Used sparingly — never as fill, only as 4px lines, underlines, or one-word color hits. |
+| `--amber-alert`  | `#F59E0B` | Warning amber. Used for the "$100/month" beat and the current-word caption highlight. One beat only — not sprinkled across scenes. |
+| `--commit-green` | `#22C55E` | Used ONCE: the "reversal" beat (the brief positive), as a 4px left-bar accent. Never repeated. |
+| `--steel`        | `#4A5568` | Structural elements only — rule lines, grid hairlines, panel outlines.               |
 
-## Scene Breakdown
+### Hard rules
 
-Eight scenes matching the narration beats. Each scene has a designated hero element and visual concept.
+- `--void-0` is the background on **every scene**. No per-scene background color changes. No gradients behind content.
+- `--breach` appears on **no more than 30% of frames** and never as a fill larger than a single word or a 4px rule. It is an alarm state, not decoration.
+- `--amber-alert` is reserved for two uses only: the `$100` price beat and the caption highlight. If it appears on a third thing, that thing is wrong.
+- `--commit-green` appears **once only** — the reversal beat. Zero other appearances.
+- No element pairs `--breach` and `--amber-alert` in the same frame.
+- All text is `--signal` or `--signal-dim`. Never `--breach` or `--amber-alert` for running copy.
+- No gradients anywhere. Not behind text, not on cards, not as backgrounds. The one permitted radial is the **void vignette** (see § Ambient Background Motion).
+- Cool-tint all neutrals. If it reads warm or gray, it is wrong.
 
----
+### Gradients
 
-### Scene 1 — "The Quiet Removal" (0.0 s – 5.8 s)
-> "Anthropic quietly removed Claude Code from its twenty dollar Pro plan, and developers noticed immediately."
-
-| Property | Value |
-|---|---|
-| Hero element | Headline: **"QUIETLY REMOVED"** in Space Grotesk 700 at 80 px, centered at y≈780 |
-| Supporting | Below hero: "$20 PRO PLAN" in `--accent` at 56 px, y≈900 |
-| Upper label | "ANTHROPIC · CLAUDE CODE" in DM Mono 24 px, `--fg-muted`, y≈300 |
-| Background | `--bg` with a single large radial glow (accent-dim, 600 px radius) centered behind hero text, breathing at 0.03 Hz. Faint horizontal hairline rule at y≈700, 1 px, `--fg-muted` at 20% opacity, scaleX from 0 → 1. |
-| Entrance | Hairline rule draws first (0.3s, `expo.out`). "QUIETLY REMOVED" fades in from opacity 0 with slight y-shift down (-30 → 0), 0.4s, `power3.out`. "$20 PRO PLAN" follows 0.15s later, same entrance. Upper label fades in at 0.2 opacity simultaneously. |
-| Transition in | Hard cut from black (first scene — 0.1s delay before any animation). |
+One only: the **void vignette** — a radial from `--void-1` at 25% opacity at the frame center, fading to transparent by 70% radius. Subtly darkens the corners without introducing color. No other gradients. No text gradients. No mesh gradients.
 
 ---
 
-### Scene 2 — "The Tweet" (5.8 s – 9.2 s)
-> "One tweet exposing the change hit nine hundred thousand views in hours."
+## 4. Typography
 
-| Property | Value |
-|---|---|
-| Hero element | **"900K"** in Space Grotesk 700 at 150 px, `--accent`, centered at y≈790. Counter-animates from 0 → 900,000 over 0.6s. Display abbreviates to "900K" with "VIEWS" in 40 px below. |
-| Supporting | Ghost numeral "900,000" at 8% opacity, 300 px tall, behind the hero, slow upward drift. |
-| Upper label | "ONE TWEET" in DM Mono 28 px, `--fg-muted`, y≈340 |
-| Background | `--bg`. Accent-dim radial glow behind the counter, expanding with the count. |
-| Entrance | Counter starts immediately on scene entry. "VIEWS" label fades in when counter completes. |
-| Transition in | Push slide LEFT (outgoing scene exits left, incoming enters from right), 0.3s, `power3.inOut`. |
+Three voices. The pairing embodies "institutional authority vs. developer reality vs. raw evidence."
 
----
+| Family              | Role                                              | Weights    | Why                                                                                     |
+| ------------------- | ------------------------------------------------- | ---------- | --------------------------------------------------------------------------------------- |
+| **Barlow Condensed** (sans) | Headlines, verdict statements, eyebrows, numbered beats | 800, 600   | Condensed grotesque — institutional, compressed, authority under pressure. Reads like incident ticket headers. |
+| **DM Mono** (mono) | Stats, code evidence, URL diffs, data labels, captions | 600, 400   | Monospaced = receipts. When the font switches to mono, the viewer knows: this is the proof. |
+| **Literata** (serif) | Pull-quotes, attributed VP statements, editorial verdicts | 400 italic, 700 | A serif with editorial weight — gives sourced human voice a different register than the cold analysis. |
 
-### Scene 3 — "The Compute Problem" (9.2 s – 13.6 s)
-> "The real problem? Claude Code sessions burn orders of magnitude more compute than regular chat."
+**Why this pairing works:** Barlow Condensed is the audit report header — authoritative, cold, compressed. DM Mono is the diff output — evidence, literally in developer typeface. Literata is the sourced quote — a human voice inside the machine documentation. The three voices never mix on a single line.
 
-| Property | Value |
-|---|---|
-| Hero element | Two horizontal bars representing compute cost, centered at y≈800. Top bar: "CHAT" label, short fill (15% width), `--fg-muted`. Bottom bar: "CLAUDE CODE" label, fills to 95% width, `--accent`. Both bars 60 px tall with 30 px gap. The scale difference IS the visual argument. |
-| Supporting | "ORDERS OF MAGNITUDE" in Space Grotesk 700, 48 px, `--fg`, positioned at y≈650 above the bars. |
-| Upper label | "COMPUTE COST" in DM Mono 24 px, `--fg-muted`, y≈300 |
-| Background | `--bg`. Faint grid of horizontal rules at 8% opacity behind the bars to give them structural context. |
-| Entrance | "COMPUTE COST" label fades in first. "CHAT" bar draws from left (scaleX 0→1, 0.3s, `power2.out`). "CLAUDE CODE" bar draws after 0.2s delay, slower (0.5s, `power2.out`) — the slowness emphasizes the magnitude. "ORDERS OF MAGNITUDE" text fades in after bars complete. |
-| Transition in | Push slide LEFT, 0.3s, `power3.inOut`. |
-| Data note | No gridlines, no axis labels, no chart chrome. Just two bars and their labels. Per the data-in-motion guidelines. |
+### Sizing (1080 × 1920 canvas, safe zone 720px wide)
 
----
+- **Verdict / mega headline** (the "bait and switch", "trust crisis" beats): **Barlow Condensed 800, 148px**, tracking `-0.02em`, line-height `0.90`, ALL CAPS.
+- **Scene headline** (most scenes): Barlow Condensed 800, **110px**, tracking `-0.015em`, line-height `0.92`.
+- **Eyebrow / incident label**: Barlow Condensed 600, **30px**, tracking `0.18em`, UPPERCASE, color `--signal-dim`.
+- **Big number** (`900,000`, `$20`, `$100`, `2%`): DM Mono 600, **220px**, tracking `-0.03em`. Can reach 260px on the single hero stat beat.
+- **Stat unit / label**: Barlow Condensed 600, **28px**, tracking `0.12em`, UPPERCASE, color `--signal-dim`.
+- **Pull-quote**: Literata 400 italic, **56px**, line-height `1.25`, color `--signal`. Max 3 lines.
+- **Attribution line**: DM Mono 400, **26px**, tracking `0.04em`, color `--signal-dim`. Example: `— MADHAV AVASARE · VP PRODUCT · ANTHROPIC`.
+- **Evidence / mono body** (URL diffs, changelog lines, doc paths): DM Mono 400, **34px**, line-height `1.4`, color `--signal`.
+- **Caption band**: DM Mono 600, **50px**, tracking `-0.01em`, line-height `1.15`, max 2 lines, max-width 680px.
+- **Corner meta** (source labels, timestamps, incident IDs): DM Mono 400, **22px**, tracking `0.06em`, color `--signal-dim`. Example: `INCIDENT · 2026-04-22 · SRC: ARS TECHNICA`.
 
-### Scene 4 — "The A/B Test Claim" (13.6 s – 16.3 s)
-> "Anthropic called it a small A B test on two percent of signups."
+**Minimums:** No body text below 28px. No headlines below 90px. No meta text below 20px.
 
-| Property | Value |
-|---|---|
-| Hero element | **"2%"** in Space Grotesk 700 at 150 px, `--evidence` color, centered at y≈790. Surrounded by an animated hand-drawn circle (CSS circle mode, `--evidence` stroke, 3 px). |
-| Supporting | "A/B TEST" in DM Mono 36 px, `--fg-muted`, y≈650. Styled in quotes: `"A/B TEST"` to signal skepticism. |
-| Upper label | "ANTHROPIC'S CLAIM" in DM Mono 24 px, `--fg-muted`, y≈300 |
-| Background | `--bg` with `--evidence-dim` radial glow behind "2%". |
-| Entrance | "2%" appears with a scale-pop (scale 0.8 → 1.0, opacity 0 → 1, 0.25s, `back.out(1.4)`). Circle draws around it 0.3s after (stroke-dashoffset animation, 0.5s, `power2.inOut`). |
-| Transition in | Squeeze (cold/clinical mood), 0.3s, `power2.inOut`. Scene change here signals a shift from what happened to Anthropic's explanation. |
+### Banned typography moves
+
+- No Inter, Roboto, Poppins, Syne, Playfair, Outfit, or any font in the HyperFrames banned list.
+- No two sans-serifs on the same scene. Barlow Condensed + DM Mono or DM Mono + Literata only.
+- No gradient text.
+- No letter-spacing on running copy (only on eyebrows and labels, where tracking is specified above).
+- No ALL CAPS on anything longer than 5 words except the mega headline.
+- No decorative borders or pill badges on text — the mono font is already the visual indicator of evidence.
 
 ---
 
-### Scene 5 — "The Receipts" (16.3 s – 20.7 s)
-> "But they had already rewritten their public support docs as if it were permanent."
+## 5. Motion Language
 
-| Property | Value |
-|---|---|
-| Hero element | A simulated URL/doc-diff visual centered at y≈800. Two stacked lines in DM Mono 32 px: Line 1 (struck through in `--accent`): `…/pro-or-max-plan` Line 2 (highlighted in `--evidence`): `…/max-plan`. This is the visual "receipt." |
-| Supporting | "SUPPORT DOCS REWRITTEN" in Space Grotesk 700, 52 px, `--fg`, y≈620. |
-| Upper label | "THE EVIDENCE" in DM Mono 24 px, `--evidence`, y≈300 |
-| Background | `--bg` with a faint `--evidence-dim` wash across the middle band. Subtle scan-line texture (2 px horizontal lines at 4% opacity, slow downward drift at 10 px/s) to evoke a "looking at a screen" feel. |
-| Entrance | "THE EVIDENCE" label appears first (0.2s). "SUPPORT DOCS REWRITTEN" slides in from left (x: -40 → 0, 0.35s, `power3.out`). URL line 1 types in character-by-character (typewriter, 0.4s total). Strikethrough draws across it (scaleX 0→1, 0.2s, `power2.out`). URL line 2 types in below (0.3s). Evidence highlight sweeps behind line 2 (marker highlight mode, 0.3s). |
-| Transition in | Push slide LEFT, 0.3s, `power3.inOut`. Consistency with scenes 2–3. |
+The house style: **"logged, then flagged."** Elements arrive with institutional certainty — not floating in, not slamming like a hype video. They *appear as if a system wrote them* — fast but weight-bearing. The alarm state (`--breach`) pulses exactly once when it enters and then holds. Nothing bounces. Nothing overshoots. Ambient motion is minimal and cold: a slow scan-line drift, a subtle blinking cursor.
 
----
+### Global easing palette
 
-### Scene 6 — "The Reversal" (20.7 s – 22.6 s)
-> "After the backlash, they reversed course."
+| Name          | GSAP curve      | Use                                                              |
+| ------------- | --------------- | ---------------------------------------------------------------- |
+| `log-in`      | `power3.out`    | Primary entrances — headlines, labels, stat numbers.            |
+| `snap`        | `expo.out`      | Numbers and counters locking into final value.                  |
+| `diff-draw`   | `steps(8)`      | Strikethroughs, breach lines, URL diff reveals — step-function, no smooth. |
+| `scan`        | `power2.inOut`  | Scene transitions and container moves.                          |
+| `idle`        | `sine.inOut`    | Ambient: vignette pulse, cursor blink, ghost text drift.        |
+| `flush`       | `power4.in`     | Exits — elements are erased, not floated away.                  |
 
-| Property | Value |
-|---|---|
-| Hero element | **"REVERSED"** in Space Grotesk 700 at 88 px, `--fg`, centered at y≈820. A horizontal accent line (3 px, `--accent`) draws underneath it, spanning the word's width. |
-| Supporting | "AFTER THE BACKLASH" in DM Mono 28 px, `--fg-muted`, y≈700 (above hero, creating a label→hero stack centered on y≈820). |
-| Background | `--bg`. The accent radial glow from scene 1 returns but at 8% opacity — visual callback. |
-| Entrance | "AFTER THE BACKLASH" fades in (0.2s). "REVERSED" slams in (y: +60 → 0, 0.2s, `expo.out` — fastest entrance in the video, matches the brevity of the narration beat). Underline draws (scaleX 0→1, 0.2s, `power2.out`). |
-| Duration note | This is the shortest scene (~1.9s). The speed itself communicates: the reversal was swift but hollow. |
-| Transition in | Hard cut. No transition — the abruptness mirrors "backlash." This is the disruption beat per the transition narrative-position guide. |
+No `back.out`, no `elastic`, no `bounce`. This is not playful. The word "bait and switch" is an accusation.
 
----
+### Durations
 
-### Scene 7 — "The Admission" (22.6 s – 26.7 s)
-> "But the VP of Product admitted their current plans were not built for this."
+- Headline entrance: **420 ms**, ease `log-in`, from `y: +30px, opacity: 0`.
+- Eyebrow entrance: **280 ms**, ease `log-in`, staggered **120 ms before** its headline (eyebrow prints first — like the ticket label before the summary).
+- Number count-up: **1000 ms** from 0, ease `snap`. On final lock: a single 50ms flash of `--breach` on the number, then return to `--signal`. One frame of emphasis, then steady.
+- Breach line / strikethrough draw: **200 ms**, ease `diff-draw`, `scaleX` from 0 to 1, `transformOrigin: "left center"`.
+- Pull-quote fade-in: **600 ms**, ease `log-in`, from `opacity: 0` only (no y movement — quotes don't enter like headlines).
+- Scene exit: **220 ms**, ease `flush` — content clips upward 30px with opacity to 0.
+- Scene transition gap: 4-frame pure `--void-0` flash at full opacity between scenes — the monitor blanks, then the next screen loads.
 
-| Property | Value |
-|---|---|
-| Hero element | Quote block centered at y≈800: **"our current plans weren't built for this"** in DM Mono 40 px, `--fg`, within a left-bordered evidence panel (3 px left border in `--evidence`, `--bg-elevated` background, 40 px padding). |
-| Supporting | Attribution below the quote: "— MADHAV AVASARE, VP OF PRODUCT" in DM Mono 22 px, `--fg-muted`, y≈960. |
-| Upper label | "THE ADMISSION" in DM Mono 24 px, `--evidence`, y≈300 |
-| Background | `--bg`. Faint `--evidence-dim` wash behind the quote panel. |
-| Entrance | Left border of quote panel draws downward (scaleY 0→1, origin top, 0.3s, `power3.out`). Quote text fades in (0.3s, staggered per line if wrapped). Attribution fades in 0.3s later. |
-| Transition in | Blur crossfade, 0.4s, `sine.inOut`. The quote scene needs a softer entry — this is testimony, not accusation. |
+### Signature motion moments
 
----
+1. **"Quietly pulled Claude Code from its $20 Pro plan"** (opening): The words `CLAUDE CODE` appear in Barlow Condensed 800, 110px. The phrase `$20 PRO PLAN` appears below it. Then a `--breach` 6px strikethrough sweeps across `$20 PRO PLAN` left-to-right in 200 ms via `diff-draw`. The strike holds. The scene continues with the strikethrough visible.
 
-### Scene 8 — "The Warning" (26.7 s – 31.4 s)
-> "The pricing change is almost certainly coming back. Start evaluating your alternatives now."
+2. **"900,000 views in hours"**: DM Mono 600 at 220px counts from 0 to 900,000 in 1000 ms. On lock: a single `--breach` flash for 50ms, then `--signal`. Below it, the label `TWEET VIEWS · HOURS: 4` prints in DM Mono 400, 26px, `--signal-dim` — appears with 80ms delay after the counter locks.
 
-| Property | Value |
-|---|---|
-| Hero element | **"EVALUATE YOUR ALTERNATIVES"** in Space Grotesk 700 at 72 px, `--accent`, centered at y≈820. This is the call to action. Below it, a faint shimmer sweep passes across the text (shimmer-sweep component, `--accent` at 30% for `--shimmer-color`). |
-| Supporting | "THE PRICING CHANGE IS COMING BACK" in Space Grotesk 700, 40 px, `--fg-muted`, y≈680. Acts as the setup line above the CTA. |
-| Background | `--bg`. The accent radial glow returns at full 15% intensity, centered behind the CTA. A slow zoom-in on the glow (scale 1.0 → 1.15 over 4s) adds finality. |
-| Entrance | Setup line fades in (0.3s, `power2.out`). CTA slams up from below (y: +50 → 0, 0.3s, `expo.out`). Shimmer sweep fires 0.4s after CTA lands (1.2s sweep, `power2.inOut`). |
-| Transition in | Push slide LEFT, 0.3s, `power3.inOut`. Consistent with the primary transition. |
-| Transition out | Slow fade to `--bg` over final 1.0s. `sine.inOut`. Closure. |
+3. **"GitHub issues called it a breaking change"**: A chip element appears — background `--void-1`, border `2px solid --breach`, `border-radius: 6px`, padding `16px 28px`. Inside: `BREAKING CHANGE` in Barlow Condensed 800, 44px, tracking `0.1em`, color `--breach`. Below the chip: `github.com/anthropics/claude-code · issue #opened` in DM Mono 400, 26px, `--signal-dim`. Chip stamps in with `log-in` at 420ms.
 
----
+4. **"A/B test affecting 2% of new signups"**: `2%` in DM Mono 600 at 220px, color `--signal`. Below: the label `"OF NEW SIGNUPS"` in Barlow Condensed 600, 28px, `--signal-dim`. To the right of the `%` symbol, in parentheses, DM Mono 400, 30px, `--breach`: `(SITEWIDE DOCS REWRITTEN)` — the contradiction made visible. This is the only line in this scene that uses `--breach`.
 
-## Transitions Summary
+5. **"The VP of Product admitted..."**: Literata 400 italic, 56px, `--signal`:
+   > *"our current plans weren't built for this."*
+   Attribution 240ms later: `— MADHAV AVASARE · VP PRODUCT` in DM Mono 400, 26px, `--signal-dim`. A 1px `--steel` rule at 30px height separates attribution from quote.
 
-| Role | Type | Duration | Easing |
-|---|---|---|---|
-| **Primary** (60% of changes: scenes 2→3, 3→4 is an exception, 5→6 is hard cut, 8 out) | Push slide LEFT | 0.3s | `power3.inOut` |
-| **Disruption** (scene 5→6) | Hard cut | 0s | — |
-| **Topic shift** (scene 3→4) | Squeeze | 0.3s | `power2.inOut` |
-| **Testimony** (scene 6→7) | Blur crossfade | 0.4s | `sine.inOut` |
-| **Opening** (black → scene 1) | Hard cut from black, 0.1s hold before animation | — | — |
-| **Closing** (scene 8 → end) | Fade to `--bg` | 1.0s | `sine.inOut` |
+6. **"Economics are real. Execution was not."**: This is the verdict beat. Two lines in Barlow Condensed 800, 110px, color `--signal`:
+   - `ECONOMICS: REAL` — appears first
+   - `EXECUTION: NOT.` — appears 300ms later in `--breach`
+   No other elements on screen. Maximum white space. This is the climax.
 
-All transitions are CSS-based (no shader mixing). Consistent with the investigative tone — transitions should be invisible infrastructure, not spectacle.
+7. **"The reversal bought time"**: The word `REVERSED` appears in Barlow Condensed 800, 110px, with a `--commit-green` 4px left-bar accent element beside it (20px tall bar at 4px wide, centered on the cap-height, 20px left of the R). This is the only appearance of `--commit-green`. The bar animates `scaleY` from 0 in 300ms. This is the single positive note — it is visually minimal.
+
+8. **"The underlying problem hasn't moved"**: `UNRESOLVED` in Barlow Condensed 800, 148px, `--signal`. A `--breach` underline (4px, full width of the word) draws in beneath it over 200ms via `diff-draw`. Holds.
+
+9. **"Follow for more AI industry coverage"**: Barlow Condensed 600, 72px, `--signal-dim`. The word `more` or `AI INDUSTRY` flips to `--signal` weight 800. A 2px `--signal-dim` underline (no `--breach` — the alarm is done) draws beneath the CTA in 200ms. No button. No arrow.
+
+### Ambient background motion (every scene)
+
+1. **Grain**: `grain-overlay` registry component at 7% opacity, track-index 20 (top layer globally). Covers the full 1080 × 1920 canvas. Use `steps(10)` animation for the grain shift — not smooth. Film grain on a cold terminal.
+2. **Void vignette**: Radial `--void-1` at 20–28% opacity, breathing between those values over 7s, ease `idle`. Centered at `(540, 960)`.
+3. **Scan-line drift**: A 1px horizontal `--void-2` rule at 4% opacity, positioned at y=500 (approximately), drifts downward 8px over 12s at `idle` ease, then hard-resets to original position — like a CRT scan artifact. Applies to every scene. Not distracting — barely perceptible.
+4. **Ghost word**: One theme word per scene in Barlow Condensed 800, 340px, `--signal-ghost` (3% opacity), `letter-spacing: 0.04em`, positioned in the upper-right quadrant of the canvas (outside or at the edge of the safe zone), static (no drift). Words per scene: `REMOVED`, `900K`, `BREAKING`, `A/B TEST`, `ADMITTED`, `VERDICT`, `REVERSED`, `UNRESOLVED`, `FOLLOW`.
+5. **Blinking cursor**: On scenes where a mono evidence line appears, a 2px × 28px `--signal-dim` cursor blinks (opacity toggles `0 → 1` at `steps(1)` over 600ms, repeat) to the right of the last character. Stops when the scene exits.
 
 ---
 
-## Registry Components
+## 6. Scene-Level Visual Plan
 
-### Use from HyperFrames registry
+The narration maps to 9 distinct beats. Each scene is centered inside the safe zone. One idea per frame. No two stats share a scene.
 
-| Component | Where | Customization |
-|---|---|---|
-| **shimmer-sweep** | Scene 8 CTA text | `--shimmer-color: rgba(217, 79, 61, 0.3)` (accent at 30%). `--shimmer-width: 25%`. Single sweep, not looping. |
-| **grain-overlay** | Global — all scenes | Opacity 0.04 (barely perceptible). Adds analog texture to the dark backgrounds. Prevents flat-digital feel. |
+| # | Narration cue | Hero visual | Accent color |
+|---|---------------|-------------|--------------|
+| 1 | "Anthropic quietly pulled Claude Code from its $20 Pro plan" | `CLAUDE CODE` headline; `$20 PRO PLAN` below with `--breach` strikethrough sweeping across | `--breach` (strikethrough only) |
+| 2 | "developer internet noticed fast / one tweet hit 900,000 views" | `900,000` counter in DM Mono 220px; label `TWEET VIEWS · 4 HOURS` | `--signal` with `--breach` flash on lock |
+| 3 | "GitHub issues called it a breaking change" | `BREAKING CHANGE` chip with `--breach` border; mono `issue` reference below | `--breach` (chip border + text) |
+| 4 | "walked it back / A/B test / two percent of new signups / sitewide docs rewritten" | `2%` in DM Mono 220px; `(SITEWIDE DOCS REWRITTEN)` as a `--breach` contradiction line | `--breach` (parenthetical only) |
+| 5 | "VP of Product admitted plans weren't built for Claude Code's compute" | Literata pull-quote; DM Mono attribution | `--signal` / `--signal-dim` (no alarm — this is the human beat) |
+| 6 | "economics are real / execution was not" | VERDICT BEAT — two Barlow 800 lines: `ECONOMICS: REAL` then `EXECUTION: NOT.` in `--breach` | `--breach` on second line |
+| 7 | "silent removals / retroactive test framing / zero grandfathering plan" | Three-line Barlow 600 list at 72px: each item appears on its own, staggered 200ms; a `--breach` bullet (2px × 12px rect) to the left of each | `--breach` (bullets only) |
+| 8 | "reversal bought time / underlying problem hasn't moved" | `REVERSED` with `--commit-green` bar; then cross-cut to `UNRESOLVED` with `--breach` underline | `--commit-green` then `--breach` |
+| 9 | "Follow for more AI industry coverage" | Barlow Condensed 600, 72px CTA; `--signal-dim` underline draws in | `--signal-dim` (calm close) |
 
-### NOT using from registry
-
-| Component | Why not |
-|---|---|
-| **data-chart** | The compute comparison in scene 3 is simpler than a full chart block — just two bars. A chart block would be over-engineered and violate "no chart chrome" guidance. Custom build. |
-| **flowchart** | No decision-tree content in this video. |
-| **logo-outro** | No branded outro needed — the video ends on a CTA, not a logo. |
-| **grid-pixelate-wipe** | Too decorative for this tone. Investigative content needs invisible transitions. |
-
----
-
-## Background Layer
-
-Every scene must have depth — never a flat `--bg` surface with text floating on it.
-
-### Global persistent elements (all scenes)
-- **Grain overlay:** grain-overlay component at 4% opacity. Animated via CSS keyframes (no GSAP needed).
-- **Vignette:** Radial gradient from transparent center to `rgba(0,0,0,0.4)` at edges. Adds cinematic framing. Fixed, no animation.
-
-### Per-scene background elements
-Each scene gets 2–3 of the following (specified in scene descriptions above):
-
-| Element | Specs |
-|---|---|
-| **Accent radial glow** | Radial gradient, `--accent-dim` or `--evidence-dim`, 400–600 px radius, centered behind hero. Slow breathing scale (1.0 ↔ 1.05, 3s cycle, `sine.inOut`). |
-| **Ghost numerals** | Scene-relevant number rendered at 6–8% opacity, 250–350 px tall, Space Grotesk 700. Slow upward drift (y moves -20 px over scene duration). Behind all foreground content. |
-| **Hairline rules** | 1 px horizontal lines, `--fg-muted` at 15–20% opacity. Animate in via scaleX. Create structural anchoring. |
-| **Scan-line texture** | 2 px horizontal lines at 4% opacity, full width, slow downward drift. For "evidence/document" scenes only (4, 5, 7). |
+**Scene transitions:** Hard-cut only — 4-frame `--void-0` blank between every scene (the monitor wipes to black for ~66ms at 60fps, then the next scene loads). No shader transitions. No crossfades. The paginated-evidence feel requires hard cuts. Exception: the transition INTO scene 6 (the verdict beat) uses a 280ms **staggered-block cover** — 6 horizontal `--void-0` strips cover the outgoing scene bottom-to-top, each 50ms apart. It signals the climax without violating the hard-cut language.
 
 ---
 
-## Motion Principles
+## 7. Registry Elements
 
-### Global rules
-- **First animation offset:** Always 0.1–0.2s after scene start. Never t=0.
-- **Entrance direction variety:** Alternate between y-shift, x-shift, scale, and opacity-only across scenes. No two consecutive scenes use the same entrance pattern.
-- **Ease variety:** No more than 2 tweens per scene with the same easing function.
-- **Exit animations:** BANNED (per HyperFrames transition rules). Transitions handle exits. Exception: final scene fade-out.
+### Components to use
 
-### Scene rhythm: build / breathe / resolve
-- **Build (first 30%):** Staggered element entrances. Most important element first (hero), then supporting, then labels.
-- **Breathe (30–70%):** Content visible. ONE ambient motion active (glow breathing, ghost drift, subtle pan). Stillness is acceptable after high-energy entrances.
-- **Resolve (final 30%):** Content holds. Transition fires at scene end.
+- **`grain-overlay`** — install and apply globally as a track-index-20 overlay covering the full canvas at 7% opacity. This is the only texture layer. Use `steps(10)` for animation, not smooth.
 
-### Easing vocabulary for this video
+### Components to deliberately NOT use
 
-| Motion | Easing | Duration | When |
-|---|---|---|---|
-| Hero text entrance | `power3.out` | 0.3–0.4s | Most scenes |
-| Hero SLAM (scenes 6, 8) | `expo.out` | 0.2s | Impact moments |
-| Supporting text entrance | `power2.out` | 0.3s | After hero |
-| Counter animation (scene 2) | `power2.out` | 0.6s | Number reveal |
-| Bar fill (scene 3) | `power2.out` | 0.3–0.5s | Data visualization |
-| Circle draw (scene 4) | `power2.inOut` | 0.5s | Evidence emphasis |
-| Strikethrough draw | `power2.out` | 0.2s | Scene 5 |
-| Highlight sweep | `power2.out` | 0.3s | Evidence emphasis |
-| Label/tag fade-in | `power1.out` | 0.2s | Background element |
-| Glow breathing | `sine.inOut` | 3.0s (loop) | Ambient |
-| Ghost drift | `linear` (constant) | scene duration | Ambient |
-| Shimmer sweep (scene 8) | `power2.inOut` | 1.2s | CTA emphasis |
-
-### Stagger rules
-- Total stagger sequence per scene: under 500 ms.
-- Stagger in order of importance, not DOM order.
+- **`shimmer-sweep`** — forbidden. No AI-product sparkle. This video is a critique.
+- **`grid-pixelate-wipe`** — forbidden. Transitions are hard-cut only.
+- **`data-chart`** block — not appropriate. Stats are single large numbers, not charts.
+- **`flowchart`** block — not appropriate. The comparison table from the source report is not visualized as a flowchart; if referenced at all, it is rendered as DM Mono tabular lines.
+- **`logo-outro`** block — not appropriate. The outro is typographic, not branded.
 
 ---
 
-## Overall Visual Hierarchy
+## 8. Layout Enforcement Rules
 
-The viewer's eye path per scene, in order:
+### Horizontal centering (critical)
 
-1. **Hero element** — largest, most contrasty, first to animate, centered at y≈820.
-2. **Supporting element** — smaller, `--fg` or `--fg-muted`, animates second, flanks the hero.
-3. **Upper label** — smallest, `--fg-muted`, fades in quietly, provides category context.
-4. **Background elements** — already present or subtly animating. Never compete for attention.
-5. **Captions** — bottom of safe area, synchronized to narration. Always last in the visual hierarchy.
+- **Every scene-level content container** spans `x: 180px` to `x: 900px` (the full safe width) and uses `display: flex; flex-direction: column; align-items: center; justify-content: center`.
+- No hero element may use a custom `margin-left` or `left` offset that shifts it away from `--safe-center-x: 540px`.
+- Multi-line stacks (headlines + eyebrow, stat + label, quote + attribution) must all share the same horizontal center, stacked vertically with consistent gap.
+- `text-align: left` is only for the evidence mono lines (URL diffs, attribution) inside a container that is itself centered on 540px.
+
+### Vertical centering
+
+- All hero content stacks are vertically centered inside the safe zone (`y: 240 → 1400`, midpoint `y: 820`).
+- The combined bounding box midpoint of any stacked element group lands at `(540, 820)`.
+- `gap` between elements within a scene stack:
+  - Eyebrow → headline: `32px`
+  - Headline → stat label: `24px`
+  - Stat → supporting text: `40px`
+  - Pull-quote → attribution: `28px`
+  - List items: `28px`
+
+### Safe zone checklist (builder must verify per scene)
+
+- [ ] No primary content above `y: 240px`
+- [ ] No primary content below `y: 1400px`
+- [ ] No primary content left of `x: 180px` or right of `x: 900px`
+- [ ] Captions land within `y: 1240 → 1380` and are centered on `x: 540`
+- [ ] Every hero element is centered on `x: 540`
+- [ ] Combined bounding-box midpoint of each scene's stack is at `y ≈ 820`
 
 ---
 
-## Anti-Patterns (Do NOT)
+## 9. What NOT to Do — Hard Bans
 
-- No gradient text (`background-clip: text`). Text is solid color — accent or foreground.
-- No left-edge accent stripes on cards (except the quote block in scene 7, where the left border is semantically motivated as a pull-quote convention).
-- No cyan-on-dark or purple-blue gradients. The palette is cold steel + danger red + documentary gold.
-- No pure `#000000` background (use `--bg: #0B0E11`).
-- No pure `#FFFFFF` text (use `--fg: #E2E4E8`).
-- No pie charts, multi-axis charts, dashboards, or chart library aesthetics.
-- No stock photos, illustrations, or iconography. Typography and data bars are the visuals.
-- No decorative transitions. Transitions serve the narrative, not the spectacle.
-- No centered-and-floating text blocks in empty space. Every scene has at minimum: hero + one supporting element + one background element.
-- No banned fonts (Inter, Roboto, Poppins, Syne, etc.). Space Grotesk and DM Mono only.
-- No two sans-serifs paired. Space Grotesk (proportional sans) + DM Mono (monospace) — different registers, deliberate tension.
+1. **No neon, no cyan-on-dark, no purple-to-blue gradients.** This is a cold audit report, not an AI product launch.
+2. **No gradient text.** Not on headlines, not on stats.
+3. **No glowing drop shadows, no glow around any element.** Glow implies excitement. Nothing here is exciting.
+4. **No emoji.** The `--breach` strikethrough and alert borders are the visual language.
+5. **No `--breach` on more than one element per scene.** One alarm per frame. More than one and the viewer stops reading any of them.
+6. **No bouncy / elastic / overshoot eases.** `back.out`, `elastic.out`, `bounce` — none of them. This is a serious accusation.
+7. **No pie charts, no bar charts, no multi-axis dashboards.** Single hero stat per scene.
+8. **No centered CTA buttons with rounded corners.** The outro is plain type.
+9. **No stock tech imagery.** No circuit boards, no glowing AI brain, no satellite imagery. If a visual anchor is needed beyond type, use DM Mono text as evidence output.
+10. **No Anthropic logo reproduction.** The string `CLAUDE CODE` in Barlow Condensed is the brand stand-in.
+11. **No pure `#000` or `#fff`.** Always the tinted tokens (`--void-0` and `--signal`).
+12. **No ambient particles, floating orbs, or data constellations.** Grain + vignette + scan-line + one ghost word per scene. Nothing more.
+13. **No content below `y: 1400px`** (platform chrome zone) and **no content past `x: 900px`** on the right (action-button zone). Includes decoratives that resemble text.
+14. **No more than one `--commit-green` appearance** in the entire video. It is used once, on the reversal beat, and never again.
+15. **No crossfade or dissolve transitions between scenes.** Hard-cut only, with the 4-frame `--void-0` blank. The single staggered-block exception for scene 6 entry is described above and is the only permitted variation.
+16. **Do not left-align any hero content.** Hero headlines and stats must be centered on `--safe-center-x: 540px`. Left alignment is only for mono evidence lines inside a centered container.
+
+---
+
+## 10. Quick-Reference Builder Card
+
+```
+CANVAS:        1080 × 1920 portrait
+
+SAFE ZONE:     x ∈ [180, 900], y ∈ [240, 1400]
+CENTER-X:      --safe-center-x: 540px  (every hero element anchors here)
+CENTER-Y:      820px  (vertical midpoint of safe zone; stacked bbox midpoint lands here)
+CAPTION BAND:  y ∈ [1240, 1380], centered on x=540, width 720px
+
+BG:            --void-0 (#0B0D11) — every scene, no exceptions
+SURFACES:      --void-1 (#131720) cards/slabs, --void-2 (#1C2230) hairlines
+FG:            --signal (#E2E8F4) body/headlines, --signal-dim (#7A8499) labels/meta
+ALARM:         --breach (#FF3B3B) — strikethroughs, chips, verdict line; ≤30% of frames
+WARNING:       --amber-alert (#F59E0B) — $100 beat + caption highlight ONLY
+POSITIVE:      --commit-green (#22C55E) — reversal beat ONLY, never repeated
+STRUCTURE:     --steel (#4A5568) — hairlines and rule dividers
+
+FONTS:
+  Barlow Condensed 800/600   — headlines, eyebrows, verdict, list items
+  DM Mono 600/400            — stats, evidence, URL diffs, captions, attribution
+  Literata 400i/700          — pull-quotes, sourced human statements
+
+SIZES:
+  Mega headline:    Barlow Condensed 800, 148px, ALL CAPS, tracking -0.02em
+  Scene headline:   Barlow Condensed 800, 110px, tracking -0.015em
+  Eyebrow:          Barlow Condensed 600, 30px, tracking 0.18em, UPPERCASE
+  Big number:       DM Mono 600, 220–260px, tracking -0.03em
+  Stat label:       Barlow Condensed 600, 28px, tracking 0.12em, UPPERCASE
+  Pull-quote:       Literata 400i, 56px, line-height 1.25
+  Attribution:      DM Mono 400, 26px, tracking 0.04em
+  Evidence mono:    DM Mono 400, 34px, line-height 1.4
+  Caption:          DM Mono 600, 50px, max-width 680px
+  Corner meta:      DM Mono 400, 22px, tracking 0.06em
+
+EASES:
+  log-in     → power3.out    (entrances)
+  snap       → expo.out      (number lock)
+  diff-draw  → steps(8)      (strikethroughs, breach lines)
+  scan       → power2.inOut  (scene moves)
+  idle       → sine.inOut    (ambient)
+  flush      → power4.in     (exits)
+
+DURATIONS:
+  Headline entrance:    420ms
+  Eyebrow before hed:   280ms, staggered 120ms earlier
+  Number count-up:      1000ms
+  Breach flash on lock: 50ms
+  Breach line draw:     200ms
+  Pull-quote fade:      600ms
+  Exit:                 220ms
+  Transition blank:     4 frames (~66ms at 60fps)
+
+TRANSITIONS:   hard-cut (4-frame --void-0 blank); staggered-block cover INTO scene 6 only
+
+AMBIENT:
+  grain-overlay component, 7% opacity, steps(10), track-index 20
+  void vignette radial (--void-1, 20→28% opacity, 7s idle loop)
+  scan-line drift (1px --void-2, 4% opacity, 8px drift over 12s, idle ease)
+  ghost word per scene (Barlow 800, 340px, 3% opacity, upper-right)
+  blinking cursor on mono-evidence scenes only
+
+REGISTRY:      grain-overlay component (YES); all others (NO)
+```
+
+---
+
+This is the sole visual source of truth for this video. If a value is not specified here, do not invent it — constrain to the nearest specified token. If something conflicts with the HyperFrames house style, this file takes precedence.
