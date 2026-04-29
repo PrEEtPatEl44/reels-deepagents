@@ -123,7 +123,10 @@ Concretely, assume the platform danger zones are:
 - Top ~220 px: platform chrome / back button / camera notch.
 - Bottom ~520 px: username, caption, music label, like/comment/share stack, progress bar.
 - Right ~180 px (full height): the vertical action button stack.
-This leaves a safe rectangle roughly from y≈240 to y≈1400, x≈60 to x≈900. All primary
+- Left ~180 px (full height): mirror inset of the right action stack. TikTok/Reels do
+  not place chrome here, but treating the left margin as equally inset keeps the layout
+  centered on the true frame midpoint (x=540) instead of being pulled leftward.
+This leaves a safe rectangle roughly from y≈240 to y≈1400, x≈180 to x≈900. All primary
 content must live inside that rectangle. Define it explicitly in DESIGN.md as a named
 zone (e.g. `--safe-top`, `--safe-bottom`, `--safe-left`, `--safe-right`) so the builder
 has concrete numbers to work from.
@@ -134,17 +137,15 @@ component is fine; multiple components must share the same left/right padding so
 read as one centered stack.
 
 Horizontal centering — this is the #1 failure mode, read carefully:
-- The safe rectangle runs x: 60 to x: 900 (width 840 px). Its horizontal midpoint is
-  x≈480 — NOT 540 (the frame center). The TikTok/Reels action stack on the right pulls
-  the usable content area leftward, so if you compose around frame-center (540) your
-  content will visually collide with the action stack; if you left-align at safe-left
-  (60) it will drift left of optical center. DESIGN.md must explicitly call out the
-  horizontal anchor as x≈480 (the safe-rect center) and instruct the builder to center
-  every hero, headline, stat, caption band, and follow overlay on that anchor.
+- The safe rectangle runs x: 180 to x: 900 (width 720 px). Because the left and right
+  insets are equal (180 px each), the horizontal midpoint of the safe rectangle is
+  x=540 — the same as the true frame center. DESIGN.md must explicitly call out the
+  horizontal anchor as x=540 and instruct the builder to center every hero, headline,
+  stat, caption band, and follow overlay on that anchor.
 - Define a named horizontal-center variable in DESIGN.md, e.g.
-  `--safe-center-x: 480px` (or equivalent `calc((var(--safe-left) + (1080 - var(--safe-right))) / 2)`),
+  `--safe-center-x: 540px` (or equivalent `calc((var(--safe-left) + (1080 - var(--safe-right))) / 2)`),
   and tell the builder that every primary element must be horizontally centered on it
-  via `left: 480px; transform: translateX(-50%)` or a flex container that spans the
+  via `left: 540px; transform: translateX(-50%)` or a flex container that spans the
   full safe width with `justify-content: center`.
 - Forbid left-aligned hero content. `text-align: left` is only acceptable for multi-line
   body copy INSIDE a container that is itself centered on the safe-center-x anchor, and
@@ -156,7 +157,8 @@ Horizontal centering — this is the #1 failure mode, read carefully:
 
 Make sure the captions or subtitles of the narration have appropriate spacing and sit
 in the caption band defined above — never in the center third of the frame. The caption
-band is also horizontally centered on x≈480, not on frame-center.
+band is also horizontally centered on x=540 (the safe-rect center, which equals frame
+center under symmetric insets).
 
 /skills/hyperframes-registry/   blocks and components of hyperframs are available through here
 try to use these base components as much as possible  but also do not overuse it if visual harmony cannot be maintained through it use custom creations
@@ -202,43 +204,40 @@ Workflow:
 
 Layout contract (enforce in the HTML/CSS — not optional):
 - Treat the frame as 1080×1920 and honor the platform danger zones: top ~220 px, bottom
-  ~520 px, right ~180 px are under TikTok / Instagram Reels chrome and must be empty of
-  primary content. The safe rectangle is approximately x: 60–900, y: 240–1400. Use the
-  zone variables DESIGN.md defines (or define them yourself if DESIGN.md does not:
-  `--safe-top: 240px; --safe-bottom: 520px; --safe-left: 60px; --safe-right: 180px;
-   --safe-center-x: 480px; --safe-center-y: 820px;`).
+  ~520 px, right ~180 px (TikTok/Reels action stack), and left ~180 px (mirror inset
+  for optical balance) are off-limits to primary content. The safe rectangle is
+  approximately x: 180–900, y: 240–1400. Use the zone variables DESIGN.md defines (or
+  define them yourself if DESIGN.md does not:
+  `--safe-top: 240px; --safe-bottom: 520px; --safe-left: 180px; --safe-right: 180px;
+   --safe-center-x: 540px; --safe-center-y: 820px;`).
 
 HORIZONTAL CENTERING — this is the single most-broken layout rule. Read it all:
-- The frame is 1080 wide. The safe rectangle is x: 60–900, so its horizontal midpoint
-  is x=480, NOT x=540 (frame center). The TikTok/Reels action stack on the right
-  (x≈900–1080) is off-limits, which shifts the *optical* center of the usable area
-  leftward to x≈480. Every hero, headline, stat, visual motif, caption band, and
-  follow overlay must be horizontally centered on x=480 — the `--safe-center-x` anchor.
-- DO NOT center content on the viewport (e.g. `left: 50%` where 50% = 540 px, or
-  `justify-content: center` on a container that spans 0–1080). That visually drifts
-  the content RIGHT of the safe-rect center and fights with the action stack.
-- DO NOT left-align content at safe-left (e.g. a container at `left: 60px` with content
-  that is narrower than the safe width). That causes the left-drift failure the user is
-  seeing. If the content is narrower than the safe width, it MUST be re-centered on
-  x=480, not flushed to safe-left.
+- The frame is 1080 wide. The safe rectangle is x: 180–900 (width 720 px), so its
+  horizontal midpoint is x=540 — the same as the true frame center. Left and right
+  insets are equal (180 px each), so optical center matches geometric center. Every
+  hero, headline, stat, visual motif, caption band, and follow overlay must be
+  horizontally centered on x=540 — the `--safe-center-x` anchor.
+- DO NOT left-align content at safe-left (e.g. a container at `left: 180px` with
+  content narrower than the safe width). If the content is narrower than the safe
+  width, it MUST be re-centered on x=540, not flushed to safe-left.
 - Use one of these three techniques for every primary element, and nothing else:
   (a) Absolute: `left: var(--safe-center-x); transform: translateX(-50%);` with a max-width
-      ≤ 840 px so the element cannot bleed into the action stack.
-  (b) A full-safe-width container `left: var(--safe-left); right: calc(1080px - (1080px - var(--safe-right))); width: 840px;`
-      (i.e. width = 840, spanning safe-left to safe-right), with its children flex-centered
-      via `display: flex; justify-content: center;`.
+      ≤ 720 px so the element cannot bleed into either action-stack zone.
+  (b) A full-safe-width container `left: var(--safe-left); width: 720px;` (spanning
+      safe-left to safe-right), with its children flex-centered via
+      `display: flex; justify-content: center;`.
   (c) A viewport-wide container with `padding-left: var(--safe-left); padding-right: var(--safe-right);`
-      (so padding is asymmetric: 60 left, 180 right — do NOT equalize them) and children
-      flex-centered. The asymmetric padding is what pulls the center to x=480.
+      (symmetric: 180 left, 180 right) and children flex-centered. Symmetric padding
+      keeps the center at x=540.
 - Every element in a multi-element stack (title + stat + label, hero + CTA, etc.) must
-  share the same horizontal center line at x=480. Do not give any single element a
+  share the same horizontal center line at x=540. Do not give any single element a
   custom margin-left or asymmetric padding that escapes the anchor. Multi-line text
   should use `text-align: center` unless DESIGN.md specifies otherwise; if a block of
-  body copy uses `text-align: left`, its container must still be centered on x=480 and
+  body copy uses `text-align: left`, its container must still be centered on x=540 and
   have symmetric width around that anchor.
 - When you define a background element (radial glow, oversized letter, blob, pattern,
-  grid), position its visual center on x=480 too, not on frame center. A blob centered
-  at x=540 under a hero centered at x=480 will look misaligned.
+  grid), position its visual center on x=540 too. A blob centered at x=480 under a hero
+  centered at x=540 will look misaligned.
 
 VERTICAL CENTERING:
 - Every scene has ONE hero element (the main word, stat, headline, product visual,
@@ -258,13 +257,13 @@ VERTICAL CENTERING:
 OTHER LAYOUT RULES:
 - Captions/subtitles are NEVER the hero. Render the word-synced captions in a dedicated
   band near the bottom of the safe rectangle (e.g. y≈1200–1360), horizontally centered
-  on x=480 with clear padding from the hero above and from the platform chrome below.
+  on x=540 with clear padding from the hero above and from the platform chrome below.
   Captions must not drift into the center third of the frame and must not left-align
   against safe-left.
 - The Instagram follow overlay in the final 2–3 s must also respect the safe rectangle
-  and be centered on BOTH x=480 and y=820, not pinned to a corner.
+  and be centered on BOTH x=540 and y=820, not pinned to a corner.
 - When you stack multiple elements vertically, balance them around y=820 so the visual
-  mass is vertically centered, and share x=480 as the horizontal anchor so the stack is
+  mass is vertically centered, and share x=540 as the horizontal anchor so the stack is
   visually a single column — not top-heavy, bottom-heavy, left-heavy, or right-heavy.
 
 When finished, the generated `index.html` is the sole deliverable. The conversational
