@@ -10,3 +10,4 @@ venv/
 .claude/
 .worktrees
 *.logs
+.langgraph_api

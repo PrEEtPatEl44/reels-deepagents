@@ -154,6 +154,7 @@ async def _run(
         cwd=str(cwd) if cwd else None,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
+        limit=8 * 1024 * 1024,  # 8 MiB, up from asyncio default 64 KiB
     )
 
     if not stage:
@@ -165,11 +166,39 @@ async def _run(
         stderr_lines: list[str] = []
 
         async def _pump(reader, stream_name: str, sink: list[str]) -> None:
+            # Tolerate arbitrarily long "lines" (e.g. progress bars using \r,
+            # or long inline blobs). On buffer overrun, drain raw chunks and
+            # split on \r/\n ourselves so the render never fails on logging.
+            buf = ""
             while True:
-                line_b = await reader.readline()
+                try:
+                    line_b = await reader.readline()
+                except (asyncio.LimitOverrunError, ValueError):
+                    try:
+                        chunk_b = await reader.read(65536)
+                    except Exception:
+                        chunk_b = b""
+                    if not chunk_b:
+                        break
+                    buf += chunk_b.decode(errors="replace")
+                    parts = re.split(r"[\r\n]", buf)
+                    buf = parts.pop()
+                    for part in parts:
+                        if not part:
+                            continue
+                        sink.append(part)
+                        events.emit("subprocess_line", stage=stage, stream=stream_name, line=part)
+                    continue
                 if not line_b:
+                    if buf:
+                        sink.append(buf)
+                        events.emit("subprocess_line", stage=stage, stream=stream_name, line=buf)
+                        buf = ""
                     break
                 line = line_b.decode(errors="replace").rstrip("\n")
+                if buf:
+                    line = buf + line
+                    buf = ""
                 sink.append(line)
                 events.emit("subprocess_line", stage=stage, stream=stream_name, line=line)
 
